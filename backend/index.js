@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
-
+import paymentRoutes from "./routes/payment_routes.js"; // Import vào index.js
 
 import { connectDB } from "./db/connectDB.js";
 
@@ -43,3 +43,5 @@ app.listen(PORT, () => {
    connectDB();
    console.log("Server is running on port: ", PORT);
 });
+
+app.use("/api/payments", paymentRoutes); 
