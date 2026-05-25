@@ -9,6 +9,7 @@ import {
 } from "../mailtrap/emails.js";
 import { User } from "../models/user_model.js";
 
+// 1. SIGNUP
 export const signup = async (req, res) => {
     const { email, password, name } = req.body;
 
@@ -23,8 +24,8 @@ export const signup = async (req, res) => {
         }
 
         const hashedPassword = await bcryptjs.hash(password, 10);
-        // OTP 6 số
-        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+        // Sử dụng crypto.randomInt để tạo mã OTP an toàn hơn
+        const verificationToken = crypto.randomInt(100000, 999999).toString();
 
         const user = new User({
             email,
@@ -36,7 +37,6 @@ export const signup = async (req, res) => {
 
         await user.save();
 
-        // JWT Token
         generateTokenAndSetCookie(res, user._id);
 
         await sendVerificationEmail(user.email, verificationToken);
@@ -55,6 +55,7 @@ export const signup = async (req, res) => {
     }
 };
 
+// 2. VERIFY EMAIL
 export const verifyEmail = async (req, res) => {
     const { code } = req.body;
     try {
@@ -88,6 +89,7 @@ export const verifyEmail = async (req, res) => {
     }
 };
 
+// 3. LOGIN
 export const login = async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -99,6 +101,11 @@ export const login = async (req, res) => {
         const isPasswordValid = await bcryptjs.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(400).json({ success: false, message: "Invalid credentials" });
+        }
+
+        // Kiểm tra xem đã verify email chưa
+        if (!user.isVerified) {
+            return res.status(400).json({ success: false, message: "Please verify your email first" });
         }
 
         generateTokenAndSetCookie(res, user._id);
@@ -120,21 +127,23 @@ export const login = async (req, res) => {
     }
 };
 
+// 4. LOGOUT
 export const logout = async (req, res) => {
     res.clearCookie("token");
     res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
+// 5. FORGOT PASSWORD
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {
         const user = await User.findOne({ email });
 
+        // Bảo mật: Không thông báo email tồn tại hay không để tránh rà quét
         if (!user) {
-            // Bảo mật: Thường hệ thống lớn vẫn trả về 200 để tránh bị rà quét email (Email Enumeration)
-            return res.status(400).json({ success: false, message: "User not found" });
+            return res.status(200).json({ success: true, message: "If the email exists, a reset link will be sent." });
         }
-        // generate token to reset
+
         const resetToken = crypto.randomBytes(20).toString("hex");
         const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
 
@@ -143,16 +152,16 @@ export const forgotPassword = async (req, res) => {
 
         await user.save();
         
-        //send email
         await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`);
 
-        res.status(200).json({ success: true, message: "Password reset link sent to your email" });
+        res.status(200).json({ success: true, message: "If the email exists, a reset link will be sent." });
     } catch (error) {
         console.error("[AUTH] ForgotPassword error:", error.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
+// 6. RESET PASSWORD
 export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
@@ -167,7 +176,6 @@ export const resetPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid or expired reset token" });
         }
 
-        //update password
         const hashedPassword = await bcryptjs.hash(password, 10);
 
         user.password = hashedPassword;
@@ -175,7 +183,6 @@ export const resetPassword = async (req, res) => {
         user.resetPasswordExpiresAt = undefined;
         await user.save();
 
-        //send email, pass the user email in 
         await sendResetSuccessEmail(user.email);
 
         res.status(200).json({ success: true, message: "Password reset successful" });
@@ -185,16 +192,17 @@ export const resetPassword = async (req, res) => {
     }
 };
 
+// 7. CHECK AUTH
 export const checkAuth = async (req, res) => {
-	try {
-		const user = await User.findById(req.userId).select("-password");
-		if (!user) {
-			return res.status(400).json({ success: false, message: "User not found" });
-		}
+    try {
+        const user = await User.findById(req.userId).select("-password");
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found" });
+        }
 
-		res.status(200).json({ success: true, user });
-	} catch (error) {
-		console.log("Error in checkAuth ", error);
-		res.status(400).json({ success: false, message: error.message });
-	}
+        res.status(200).json({ success: true, user });
+    } catch (error) {
+        console.log("Error in checkAuth ", error);
+        res.status(400).json({ success: false, message: error.message });
+    }
 };

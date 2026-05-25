@@ -31,10 +31,10 @@ export const sendWelcomeEmail = async (email, name) => {
         await mailtrapClient.send({
             from: sender,
             to: recipient,
-            subject: "Welcome to Our Platform",
+            subject: "Welcome to BookHaven", 
             html: WELCOME_EMAIL_TEMPLATE
                 .replace(/{name}/g, name)
-                .replace(/{dashboardURL}/g, "https://your-production-app.com/dashboard"),
+                .replace(/{dashboardURL}/g, process.env.CLIENT_URL), 
             category: "Onboarding",
         });
         console.log(`[ONBOARDING] Welcome email sent successfully to: ${email}`);

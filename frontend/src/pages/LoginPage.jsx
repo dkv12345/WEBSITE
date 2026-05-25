@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, BookOpen, ArrowLeft, ArrowRight } from "lucide-react"; // ĐÃ XÓA Chrome, Facebook, Github Ở ĐÂY
+import { Mail, Lock, BookOpen, ArrowLeft, ArrowRight, Loader } from "lucide-react";
 import InputField from "../components/auth/InputField";
 import SocialButton from "../components/auth/SocialButton";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [remember, setRemember] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -15,14 +18,26 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await axios.post("/api/auth/login", form, {
+        withCredentials: true,
+      });
+      toast.success(response.data.message);
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F16323] flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-[1100px] bg-white rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px]">
-        
+
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="absolute top-8 left-8 p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"
           >
@@ -49,7 +64,7 @@ export default function LoginPage() {
               placeholder="Enter your email"
               icon={Mail}
             />
-            
+
             <InputField
               name="password"
               value={form.password}
@@ -77,9 +92,14 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-2"
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-2 disabled:opacity-70 flex items-center justify-center"
             >
-              Login
+              {isLoading ? (
+                <Loader className="w-5 h-5 animate-spin mx-auto text-white" />
+              ) : (
+                "Login"
+              )}
             </button>
           </form>
 
@@ -102,7 +122,7 @@ export default function LoginPage() {
 
           <p className="text-left text-sm text-gray-600 mt-8 font-medium">
             Don't have an account?{' '}
-            <Link to="/register" className="font-bold text-[#F16323] hover:text-orange-700">
+            <Link to="/signup" className="font-bold text-[#F16323] hover:text-orange-700">
               Sign up
             </Link>
           </p>
@@ -115,7 +135,7 @@ export default function LoginPage() {
               alt="Library Bookshelf"
               className="absolute inset-0 w-full h-full object-cover"
             />
-            
+
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
 
             <div className="absolute bottom-6 left-6 right-6">
@@ -128,11 +148,11 @@ export default function LoginPage() {
                     Vast resources
                   </span>
                 </div>
-                
+
                 <p className="text-white text-[17px] font-semibold leading-relaxed mb-6">
                   "I was able to find rare editions and connect with fellow book lovers, elevating my reading experience by 100% using this platform."
                 </p>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-white font-bold text-sm">Sarah Bright</h4>
@@ -157,7 +177,6 @@ export default function LoginPage() {
   );
 }
 
-// BỘ MÃ SVG ICON CHUẨN ĐƯỢC THÊM VÀO ĐÂY
 function GoogleIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 48 48">
