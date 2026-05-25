@@ -1,32 +1,33 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, BookOpen, ArrowLeft, ArrowRight, Loader } from "lucide-react";
+import { Mail, Lock, BookOpen, ArrowLeft, ArrowRight, Loader, AlertCircle } from "lucide-react";
 import InputField from "../components/auth/InputField";
 import SocialButton from "../components/auth/SocialButton";
 import axios from "axios";
-import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     try {
       const response = await axios.post("/api/auth/login", form, {
         withCredentials: true,
       });
-      toast.success(response.data.message);
-      navigate("/dashboard");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
+      navigate("/mainwebpage");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +55,7 @@ export default function LoginPage() {
             <p className="text-gray-500 text-[15px]">Enter your details to access your personal library.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 flex-1 w-full max-w-[400px]">
+          <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-[400px]">
             <InputField
               name="email"
               value={form.email}
@@ -74,6 +75,14 @@ export default function LoginPage() {
               placeholder="Enter your password"
               icon={Lock}
             />
+
+            {/* Error message */}
+            {error && (
+              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 cursor-pointer group">
@@ -96,7 +105,7 @@ export default function LoginPage() {
               className="w-full py-3 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-2 disabled:opacity-70 flex items-center justify-center"
             >
               {isLoading ? (
-                <Loader className="w-5 h-5 animate-spin mx-auto text-white" />
+                <Loader className="w-5 h-5 animate-spin" />
               ) : (
                 "Login"
               )}
@@ -130,29 +139,17 @@ export default function LoginPage() {
 
         <div className="hidden md:block w-1/2 p-2.5">
           <div className="relative w-full h-full rounded-2xl overflow-hidden">
-            <img
-              src="/bookshelf.jpg"
-              alt="Library Bookshelf"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-
+            <img src="/bookshelf.jpg" alt="Library Bookshelf" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-
             <div className="absolute bottom-6 left-6 right-6">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl">
                 <div className="flex gap-2 mb-4">
-                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">
-                    Community of readers
-                  </span>
-                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">
-                    Vast resources
-                  </span>
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Community of readers</span>
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Vast resources</span>
                 </div>
-
                 <p className="text-white text-[17px] font-semibold leading-relaxed mb-6">
                   "I was able to find rare editions and connect with fellow book lovers, elevating my reading experience by 100% using this platform."
                 </p>
-
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-white font-bold text-sm">Sarah Bright</h4>

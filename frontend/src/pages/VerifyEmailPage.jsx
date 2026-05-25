@@ -39,7 +39,7 @@ export default function VerifyEmailPage() {
     try {
       const res = await axios.post("/api/auth/verify-email", { code: verificationCode });
       toast.success(res.data.message);
-      navigate("/dashboard"); 
+      navigate("/mainwebpage");
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid verification code");
     }

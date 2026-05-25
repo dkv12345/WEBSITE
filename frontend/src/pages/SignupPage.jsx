@@ -1,21 +1,19 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, User, BookOpen, ArrowLeft, Loader } from "lucide-react";
+import { Mail, Lock, User, BookOpen, ArrowLeft, Loader, AlertCircle } from "lucide-react";
 import InputField from "../components/auth/InputField";
 import SocialButton from "../components/auth/SocialButton";
 import axios from "axios";
-import toast from "react-hot-toast";
+
 export default function SignUpPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
-  
-  // Dùng state nội bộ thay vì authStore ngoại lai
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    if (error) setError(null); // Xóa lỗi khi người dùng gõ lại
+    if (error) setError("");
   };
 
   const calculateStrength = (pass) => {
@@ -29,45 +27,36 @@ export default function SignUpPage() {
 
   const strength = calculateStrength(form.password);
 
-  const getStrengthConfig = (strengthScore) => {
-    if (strengthScore === 0) return { text: "Too Short", color: "text-gray-400", bg: "bg-gray-200" };
-    if (strengthScore === 1) return { text: "Weak", color: "text-red-500", bg: "bg-red-500" };
-    if (strengthScore === 2) return { text: "Fair", color: "text-orange-500", bg: "bg-orange-500" };
-    if (strengthScore === 3) return { text: "Good", color: "text-yellow-500", bg: "bg-yellow-500" };
+  const getStrengthConfig = (s) => {
+    if (s === 0) return { text: "Too Short", color: "text-gray-400", bg: "bg-gray-200" };
+    if (s === 1) return { text: "Weak", color: "text-red-500", bg: "bg-red-500" };
+    if (s === 2) return { text: "Fair", color: "text-orange-500", bg: "bg-orange-500" };
+    if (s === 3) return { text: "Good", color: "text-yellow-500", bg: "bg-yellow-500" };
     return { text: "Strong", color: "text-green-500", bg: "bg-green-500" };
   };
 
   const strengthConfig = getStrengthConfig(strength);
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setError("");
     try {
-        // CỰC KỲ QUAN TRỌNG: Cần có withCredentials: true
-        const response = await axios.post("/api/auth/signup", form, {
-            withCredentials: true 
-        });
-        
-        toast.success(response.data.message);
-        navigate("/verify-email");
-        
-    } catch (error) {
-        // In ra lỗi chi tiết từ server để xem tại sao nó 403
-        console.error("Lỗi chi tiết:", error.response?.data);
-        toast.error(error.response?.data?.message || "Error");
+      await axios.post("/api/auth/signup", form, { withCredentials: true });
+      navigate("/verify-email");
+    } catch (err) {
+      setError(err.response?.data?.message || "Something went wrong. Please try again.");
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
   return (
     <div className="min-h-screen bg-[#F16323] flex items-center justify-center p-4 md:p-6 font-sans">
       <div className="w-full max-w-[1100px] bg-white rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px]">
-        
-        {/* === CỘT TRÁI === */}
+
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative justify-center">
-          <button 
+          <button
             type="button"
             onClick={() => navigate(-1)}
             className="absolute top-8 left-8 p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"
@@ -76,7 +65,6 @@ const handleSubmit = async (e) => {
           </button>
 
           <div className="w-full max-w-[450px] mx-auto flex flex-col flex-1 justify-center">
-            
             <div className="mb-5 flex items-center gap-2.5">
               <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
               <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
@@ -88,90 +76,46 @@ const handleSubmit = async (e) => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 w-full">
-              <InputField
-                name="name"
-                value={form.name}
-                onChange={handleChange("name")}
-                label="Full Name"
-                type="text"
-                placeholder="Enter your full name"
-                icon={User}
-                required
-              />
+              <InputField name="name" value={form.name} onChange={handleChange("name")} label="Full Name" type="text" placeholder="Enter your full name" icon={User} required />
+              <InputField name="email" value={form.email} onChange={handleChange("email")} label="Email" type="email" placeholder="Enter your email" icon={Mail} required />
+              <InputField name="password" value={form.password} onChange={handleChange("password")} label="Password" type="password" placeholder="Create a password" icon={Lock} required />
 
-              <InputField
-                name="email"
-                value={form.email}
-                onChange={handleChange("email")}
-                label="Email"
-                type="email"
-                placeholder="Enter your email"
-                icon={Mail}
-                required
-              />
-              
-              <InputField
-                name="password"
-                value={form.password}
-                onChange={handleChange("password")}
-                label="Password"
-                type="password"
-                placeholder="Create a password"
-                icon={Lock}
-                required
-              />
-
-              {/* Thanh báo độ mạnh mật khẩu */}
-              <div className="h-9 w-full flex flex-col justify-center">
-                <div className="flex items-center gap-3 w-full opacity-100">
-                  <div className="flex-1 flex gap-1.5">
-                    {[0, 1, 2, 3].map((index) => (
-                      <div
-                        key={index}
-                        className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                          form.password && index < strength ? strengthConfig.bg : "bg-gray-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className={`text-xs font-bold tracking-wide min-w-[60px] text-right transition-colors duration-300 ${form.password ? strengthConfig.color : "text-gray-400"}`}>
-                    {form.password ? strengthConfig.text : "Empty"}
-                  </span>
+              {/* Password strength */}
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex-1 flex gap-1.5">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${form.password && index < strength ? strengthConfig.bg : "bg-gray-200"}`} />
+                  ))}
                 </div>
+                <span className={`text-xs font-bold tracking-wide min-w-[60px] text-right transition-colors duration-300 ${form.password ? strengthConfig.color : "text-gray-400"}`}>
+                  {form.password ? strengthConfig.text : "Empty"}
+                </span>
               </div>
 
-              {/* Vùng báo lỗi dự phòng */}
-              <div className="h-5 flex items-center">
-                {error && (
-                  <p className="text-red-500 font-bold text-xs animate-pulse">
-                    {error}
-                  </p>
-                )}
-              </div>
+              {/* Error message */}
+              {error && (
+                <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full py-3 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-70"
               >
-                {isLoading ? (
-                  <Loader className="w-5 h-5 animate-spin mx-auto text-white" />
-                ) : (
-                  "Sign Up"
-                )}
+                {isLoading ? <Loader className="w-5 h-5 animate-spin" /> : "Sign Up"}
               </button>
             </form>
 
             <div className="mt-6 w-full">
               <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
                 <div className="relative flex justify-center text-[11px] uppercase font-bold tracking-widest">
                   <span className="bg-white px-4 text-gray-400">Or register with</span>
                 </div>
               </div>
-
               <div className="mt-4 flex gap-3">
                 <SocialButton icon={<GoogleIcon />} />
                 <SocialButton icon={<FacebookIcon />} />
@@ -181,45 +125,27 @@ const handleSubmit = async (e) => {
 
             <p className="text-left text-sm text-gray-600 mt-6 font-medium">
               Already have an account?{' '}
-              <Link to="/login" className="font-bold text-[#F16323] hover:text-orange-700">
-                Log in
-              </Link>
+              <Link to="/login" className="font-bold text-[#F16323] hover:text-orange-700">Log in</Link>
             </p>
-
           </div>
         </div>
 
-        {/* === CỘT PHẢI === */}
         <div className="hidden md:block w-1/2 p-2.5">
           <div className="relative w-full h-full rounded-2xl overflow-hidden">
-            <img
-              src="/bookshelf.jpg"
-              alt="Library Bookshelf"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            
+            <img src="/bookshelf.jpg" alt="Library Bookshelf" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-
             <div className="absolute bottom-6 left-6 right-6">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl">
                 <div className="flex gap-2 mb-4">
-                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">
-                    Join BookHaven
-                  </span>
-                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">
-                    Explore
-                  </span>
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Join BookHaven</span>
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Explore</span>
                 </div>
-                
                 <p className="text-white text-[17px] font-semibold leading-relaxed mb-6">
                   "Creating an account unlocked a whole new world of literature for me. The semantic search feature is a game-changer!"
                 </p>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-white font-bold text-sm">David Chen</h4>
-                    <p className="text-white/70 text-xs font-semibold mt-0.5">New Member</p>
-                  </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">David Chen</h4>
+                  <p className="text-white/70 text-xs font-semibold mt-0.5">New Member</p>
                 </div>
               </div>
             </div>
@@ -231,7 +157,6 @@ const handleSubmit = async (e) => {
   );
 }
 
-// === CÁC THÀNH PHẦN SVG ICON ===
 function GoogleIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 48 48">

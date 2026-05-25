@@ -1,9 +1,10 @@
 import { Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import SignUpPage from "./pages/SignupPage";
+import SignUpPage from "./pages/SignUpPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import MainWebPage from "./pages/MainWebPage";
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      <Route path="/dashboard" element={<div className="p-10 text-2xl font-bold">vô rồi</div>} />
+      <Route path="/mainwebpage" element={<MainWebPage />} />
     </Routes>
   );
 }
