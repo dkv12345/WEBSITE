@@ -1,33 +1,60 @@
-import { useState } from "react";
-import { BookOpen, ShoppingCart, Search, Heart, Star, Menu, X, ChevronRight, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, ShoppingCart, Search, Heart, Star, Menu, X, ChevronRight, LogOut, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-
-const books = [
-  { id: 1, title: "The Midnight Library", author: "Matt Haig", price: 14.99, rating: 4.8, reviews: 2341, category: "Fiction", badge: "Bestseller", cover: "bg-gradient-to-br from-indigo-900 to-blue-700" },
-  { id: 2, title: "Atomic Habits", author: "James Clear", price: 16.99, rating: 4.9, reviews: 5120, category: "Self-Help", badge: "Top Rated", cover: "bg-gradient-to-br from-orange-500 to-red-600" },
-  { id: 3, title: "The Alchemist", author: "Paulo Coelho", price: 12.99, rating: 4.7, reviews: 8900, category: "Fiction", badge: null, cover: "bg-gradient-to-br from-yellow-600 to-amber-800" },
-  { id: 4, title: "Sapiens", author: "Yuval Noah Harari", price: 18.99, rating: 4.6, reviews: 3200, category: "History", badge: "New", cover: "bg-gradient-to-br from-slate-700 to-gray-900" },
-  { id: 5, title: "Dune", author: "Frank Herbert", price: 15.99, rating: 4.8, reviews: 4100, category: "Sci-Fi", badge: null, cover: "bg-gradient-to-br from-amber-700 to-yellow-900" },
-  { id: 6, title: "The Psychology of Money", author: "Morgan Housel", price: 13.99, rating: 4.7, reviews: 2800, category: "Finance", badge: "Trending", cover: "bg-gradient-to-br from-emerald-600 to-teal-800" },
-  { id: 7, title: "Project Hail Mary", author: "Andy Weir", price: 17.99, rating: 4.9, reviews: 1900, category: "Sci-Fi", badge: "New", cover: "bg-gradient-to-br from-cyan-600 to-blue-900" },
-  { id: 8, title: "Educated", author: "Tara Westover", price: 14.49, rating: 4.7, reviews: 3500, category: "Memoir", badge: null, cover: "bg-gradient-to-br from-rose-700 to-pink-900" },
-];
-
-const categories = ["All", "Fiction", "Self-Help", "History", "Sci-Fi", "Finance", "Memoir"];
+// Các danh mục gợi ý nhanh (Tương ứng với dữ liệu trong DB của bạn)
+const categories = ["All", "Fiction", "History", "Poetry", "Cooking", "Biography", "Business"];
 
 export default function MainWebPage() {
   const navigate = useNavigate();
+  
+  // State quản lý dữ liệu từ Database
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // State quản lý giao diện
   const [activeCategory, setActiveCategory] = useState("All");
   const [cartCount, setCartCount] = useState(0);
   const [liked, setLiked] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [addedToCart, setAddedToCart] = useState({});
 
+  // Fetch dữ liệu từ API khi Component Mount hoặc khi ActiveCategory thay đổi
+  useEffect(() => {
+    const fetchBooks = async () => {
+      setLoading(true);
+      try {
+        // Xây dựng URL động dựa trên category
+        let url = "http://localhost:5001/api/books?limit=24";
+        if (activeCategory !== "All") {
+          url += `&genre=${activeCategory}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error("Không thể tải dữ liệu từ máy chủ");
+        }
+        
+        const result = await response.json();
+        setBooks(result.data);
+      } catch (err) {
+        console.error("Lỗi fetch books:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [activeCategory]);
+
+  // Lọc dữ liệu theo Search Box (Lọc ở Frontend)
   const filtered = books.filter((b) => {
-    const matchCat = activeCategory === "All" || b.category === activeCategory;
-    const matchSearch = b.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.author.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCat && matchSearch;
+    const matchSearch = 
+      b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      b.author.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchSearch;
   });
 
   const handleAddToCart = (id) => {
@@ -95,9 +122,22 @@ export default function MainWebPage() {
             </button>
           </div>
           <div className="flex gap-4">
-            {books.slice(0, 3).map((b) => (
-              <div key={b.id} className={`${b.cover} w-20 h-28 md:w-28 md:h-40 rounded-xl shadow-2xl flex items-end p-2 rotate-${b.id % 2 === 0 ? "3" : "-2"}`}>
-                <span className="text-white text-[9px] font-bold leading-tight line-clamp-2">{b.title}</span>
+            {!loading && books.slice(0, 3).map((b, index) => (
+              <div 
+                key={b._id} 
+                className="w-20 h-28 md:w-28 md:h-40 rounded-xl shadow-2xl overflow-hidden"
+                style={{ transform: `rotate(${index % 2 === 0 ? "3deg" : "-2deg"})` }}
+              >
+                {/* TỐI ƯU ẢNH HERO (Bắt lỗi onError) */}
+                <img 
+                  src={b.images?.medium || "https://placehold.co/150x200/e2e8f0/64748b?text=No+Cover"} 
+                  alt={b.title}
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = "https://placehold.co/150x200/e2e8f0/64748b?text=No+Cover";
+                  }}
+                  className="w-full h-full object-cover"
+                />
               </div>
             ))}
           </div>
@@ -106,7 +146,6 @@ export default function MainWebPage() {
 
       {/* CONTENT */}
       <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Categories */}
         <div className="flex gap-2 flex-wrap mb-8">
           {categories.map((cat) => (
             <button
@@ -123,74 +162,91 @@ export default function MainWebPage() {
           ))}
         </div>
 
-        {/* Mobile search */}
-        <div className="flex md:hidden items-center gap-2 bg-gray-100 rounded-xl px-4 py-2.5 mb-6">
-          <Search className="w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search books..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none w-full ml-2"
-          />
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-          {filtered.map((book) => (
-            <div key={book.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-              {/* Cover */}
-              <div className={`${book.cover} h-44 relative flex items-center justify-center`}>
-                {book.badge && (
-                  <span className="absolute top-3 left-3 bg-white/20 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-full border border-white/30">
-                    {book.badge}
-                  </span>
-                )}
-                <button
-                  onClick={() => toggleLike(book.id)}
-                  className="absolute top-3 right-3 p-1.5 bg-white/20 backdrop-blur rounded-full"
-                >
-                  <Heart className={`w-4 h-4 ${liked[book.id] ? "fill-red-400 text-red-400" : "text-white"}`} />
-                </button>
-                <BookOpen className="w-10 h-10 text-white/40" />
-              </div>
-
-              {/* Info */}
-              <div className="p-4">
-                <span className="text-[10px] font-bold text-[#F16323] uppercase tracking-wider">{book.category}</span>
-                <h3 className="text-sm font-bold text-gray-900 mt-1 leading-tight line-clamp-2">{book.title}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{book.author}</p>
-
-                <div className="flex items-center gap-1 mt-2">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span className="text-xs font-bold text-gray-700">{book.rating}</span>
-                  <span className="text-xs text-gray-400">({book.reviews.toLocaleString()})</span>
-                </div>
-
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-base font-extrabold text-gray-900">${book.price}</span>
-                  <button
-                    onClick={() => handleAddToCart(book.id)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                      addedToCart[book.id]
-                        ? "bg-green-500 text-white"
-                        : "bg-[#F16323] text-white hover:bg-orange-600"
-                    }`}
-                  >
-                    {addedToCart[book.id] ? "Added ✓" : "Add to Cart"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-20 text-gray-400">
-            <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-semibold">No books found</p>
-            <p className="text-sm mt-1">Try a different search or category</p>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Loader2 className="w-10 h-10 animate-spin text-[#F16323] mb-4" />
+            <p className="text-lg font-semibold">Đang tải sách từ thư viện...</p>
           </div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-500">
+            <p className="text-lg font-semibold">Lỗi: {error}</p>
+            <p className="text-sm mt-1">Vui lòng kiểm tra lại kết nối Backend.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+              {filtered.map((book) => (
+                <div key={book._id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col h-full">
+                  
+                  <div className="h-48 relative bg-gray-100 flex items-center justify-center overflow-hidden">
+                    {/* TỐI ƯU ẢNH LƯỚI (Bắt lỗi onError) */}
+                    <img 
+                      src={book.images?.medium || "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover"} 
+                      alt={book.title} 
+                      onError={(e) => {
+                        e.target.onerror = null; // Chặn lặp vô hạn nếu ảnh thay thế cũng lỗi
+                        e.target.src = "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover";
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    
+                    {book.tags && book.tags.includes("bestseller") && (
+                      <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-sm shadow-sm">
+                        BESTSELLER
+                      </span>
+                    )}
+
+                    <button
+                      onClick={() => toggleLike(book._id)}
+                      className="absolute top-2 right-2 p-1.5 bg-white/70 backdrop-blur rounded-full hover:bg-white"
+                    >
+                      <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+                    </button>
+                  </div>
+
+                  <div className="p-4 flex flex-col flex-grow">
+                    <span className="text-[10px] font-bold text-[#F16323] uppercase tracking-wider line-clamp-1">
+                      {book.genres && book.genres.length > 0 ? book.genres[0] : "General"}
+                    </span>
+                    <h3 className="text-sm font-bold text-gray-900 mt-1 leading-tight line-clamp-2" title={book.title}>
+                      {book.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{book.author}</p>
+
+                    <div className="flex-grow"></div>
+
+                    <div className="flex items-center gap-1 mt-3">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span className="text-xs font-bold text-gray-700">{book.metrics?.averageRating || 0}</span>
+                      <span className="text-xs text-gray-400">({(book.metrics?.reviewCount || 0).toLocaleString()})</span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                      <span className="text-base font-extrabold text-gray-900">${book.price?.toFixed(2) || "0.00"}</span>
+                      <button
+                        onClick={() => handleAddToCart(book._id)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                          addedToCart[book._id]
+                            ? "bg-green-500 text-white"
+                            : "bg-[#F16323] text-white hover:bg-orange-600"
+                        }`}
+                      >
+                        {addedToCart[book._id] ? "Added ✓" : "Add"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filtered.length === 0 && (
+              <div className="text-center py-20 text-gray-400">
+                <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-semibold">No books found</p>
+                <p className="text-sm mt-1">Try a different search or category</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

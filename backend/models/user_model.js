@@ -1,32 +1,26 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    // each user will have their email
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    lastLogin: {
-        type: Date,
-        default: Date.now
-    },
-    isVerified: {
-        type: Boolean,
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    name: { type: String, required: true },
+    lastLogin: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
+    
+    onboardingCompleted: { 
+        type: Boolean, 
         default: false
     },
-    resetPasswordToken: String, // Đã sửa lại thành 2 chữ 's'
-    resetPasswordExpiresAt: Date, // to secure, expire in 1h
+    preferences: {
+        favCategories: [String], 
+        userBudget: Number     
+    },
+    // -------------------------------------
+
+    resetPasswordToken: String,
+    resetPasswordExpiresAt: Date,
     verificationToken: String,
     verificationTokenExpiresAt: Date,
-}, { timestamps: true }); // Đã sửa 'timespams' thành 'timestamps'
+}, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);
