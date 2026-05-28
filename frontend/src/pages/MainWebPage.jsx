@@ -2,30 +2,25 @@ import { useState, useEffect } from "react";
 import { BookOpen, ShoppingCart, Search, Heart, Star, Menu, X, ChevronRight, LogOut, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// Các danh mục gợi ý nhanh (Tương ứng với dữ liệu trong DB của bạn)
 const categories = ["All", "Fiction", "History", "Poetry", "Cooking", "Biography", "Business"];
 
 export default function MainWebPage() {
   const navigate = useNavigate();
   
-  // State quản lý dữ liệu từ Database
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // State quản lý giao diện
   const [activeCategory, setActiveCategory] = useState("All");
   const [cartCount, setCartCount] = useState(0);
   const [liked, setLiked] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [addedToCart, setAddedToCart] = useState({});
 
-  // Fetch dữ liệu từ API khi Component Mount hoặc khi ActiveCategory thay đổi
   useEffect(() => {
     const fetchBooks = async () => {
       setLoading(true);
       try {
-        // Xây dựng URL động dựa trên category
         let url = "http://localhost:5001/api/books?limit=24";
         if (activeCategory !== "All") {
           url += `&genre=${activeCategory}`;
@@ -49,7 +44,6 @@ export default function MainWebPage() {
     fetchBooks();
   }, [activeCategory]);
 
-  // Lọc dữ liệu theo Search Box (Lọc ở Frontend)
   const filtered = books.filter((b) => {
     const matchSearch = 
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -70,7 +64,7 @@ export default function MainWebPage() {
       {/* NAV */}
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
             <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
             <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
           </div>
@@ -125,10 +119,10 @@ export default function MainWebPage() {
             {!loading && books.slice(0, 3).map((b, index) => (
               <div 
                 key={b._id} 
-                className="w-20 h-28 md:w-28 md:h-40 rounded-xl shadow-2xl overflow-hidden"
+                className="w-20 h-28 md:w-28 md:h-40 rounded-xl shadow-2xl overflow-hidden cursor-pointer hover:scale-105 transition-transform"
                 style={{ transform: `rotate(${index % 2 === 0 ? "3deg" : "-2deg"})` }}
+                onClick={() => navigate(`/book/${b._id}`)}
               >
-                {/* TỐI ƯU ẢNH HERO (Bắt lỗi onError) */}
                 <img 
                   src={b.images?.medium || "https://placehold.co/150x200/e2e8f0/64748b?text=No+Cover"} 
                   alt={b.title}
@@ -165,7 +159,7 @@ export default function MainWebPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
             <Loader2 className="w-10 h-10 animate-spin text-[#F16323] mb-4" />
-            <p className="text-lg font-semibold">Đang tải sách từ thư viện...</p>
+            <p className="text-lg font-semibold">Uploading from the database...</p>
           </div>
         ) : error ? (
           <div className="text-center py-20 text-red-500">
@@ -176,15 +170,18 @@ export default function MainWebPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
               {filtered.map((book) => (
-                <div key={book._id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col h-full">
+                <div 
+                  key={book._id} 
+                  onClick={() => navigate(`/book/${book._id}`)} // BẤM VÀO THẺ ĐỂ CHUYỂN TRANG
+                  className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all group flex flex-col h-full cursor-pointer"
+                >
                   
                   <div className="h-48 relative bg-gray-100 flex items-center justify-center overflow-hidden">
-                    {/* TỐI ƯU ẢNH LƯỚI (Bắt lỗi onError) */}
                     <img 
                       src={book.images?.medium || "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover"} 
                       alt={book.title} 
                       onError={(e) => {
-                        e.target.onerror = null; // Chặn lặp vô hạn nếu ảnh thay thế cũng lỗi
+                        e.target.onerror = null;
                         e.target.src = "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover";
                       }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -197,7 +194,10 @@ export default function MainWebPage() {
                     )}
 
                     <button
-                      onClick={() => toggleLike(book._id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Ngăn nhảy trang khi bấm nút Tim
+                        toggleLike(book._id);
+                      }}
                       className="absolute top-2 right-2 p-1.5 bg-white/70 backdrop-blur rounded-full hover:bg-white"
                     >
                       <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
@@ -224,7 +224,10 @@ export default function MainWebPage() {
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
                       <span className="text-base font-extrabold text-gray-900">${book.price?.toFixed(2) || "0.00"}</span>
                       <button
-                        onClick={() => handleAddToCart(book._id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Ngăn nhảy trang khi bấm Thêm vào giỏ
+                          handleAddToCart(book._id);
+                        }}
                         className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
                           addedToCart[book._id]
                             ? "bg-green-500 text-white"
