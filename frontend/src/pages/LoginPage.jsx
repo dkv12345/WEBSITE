@@ -22,10 +22,27 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
     try {
-      const response = await axios.post("/api/auth/login", form, {
+      // Gọi API đăng nhập
+      const response = await axios.post("http://localhost:5001/api/auth/login", form, {
         withCredentials: true,
       });
-      navigate("/mainwebpage");
+
+      // Lấy data user trả về từ Backend
+      const user = response.data.user;
+
+      // Phân luồng điều hướng thông minh
+      if (user) {
+        if (user.isVerified === false) {
+          navigate("/verify-email"); // Chưa xác thực email
+        } else if (user.onboardingCompleted === false) {
+          navigate("/onboarding");   // Chưa làm Onboarding
+        } else {
+          navigate("/mainwebpage");  // Đã hoàn tất mọi thứ
+        }
+      } else {
+        // Fallback mặc định
+        navigate("/mainwebpage");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {

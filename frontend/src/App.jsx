@@ -6,6 +6,7 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MainWebPage from "./pages/MainWebPage";
 import BookDetailPage from "./pages/BookDetailPage"; 
+import OnboardingPage from "./pages/OnBoardingPage";
 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/mainwebpage" element={<MainWebPage />} />
       <Route path="/book/:id" element={<BookDetailPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
 
     </Routes>
   );
