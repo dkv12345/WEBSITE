@@ -92,6 +92,9 @@ export const createCheckoutSession = async (req, res) => {
         });
       }
 
+      // Idempotency Key dựa trên orderId: đảm bảo cùng 1 đơn không bao giờ bị charge 2 lần
+      const idempotencyKey = `checkout_${order._id.toString()}`;
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: lineItems,
@@ -102,7 +105,7 @@ export const createCheckoutSession = async (req, res) => {
           orderId: order._id.toString(),
           userId: userId.toString()
         }
-      });
+      }, { idempotencyKey }); // <-- CHỐNG DOUBLE CHARGE: Stripe sẽ trả về session cũ thay vì tạo mới
 
       // E. Save Transaction record
       const transaction = new Transaction({
