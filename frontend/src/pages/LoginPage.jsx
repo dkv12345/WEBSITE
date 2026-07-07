@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError("");
     try {
       // Gọi API đăng nhập
-      const response = await axios.post("http://localhost:5001/api/auth/login", form, {
+      const response = await axios.post("/api/auth/login", form, {
         withCredentials: true,
       });
 

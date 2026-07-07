@@ -15,7 +15,7 @@ export const getBooks = async (req, res) => {
     // Lấy dữ liệu từ MongoDB
     const books = await Book.find(queryFilter)
       .select("-embedding_vector") // Ẩn đi mảng vector nặng nề để API chạy nhanh hơn
-      .sort({ "metrics.averageRating": -1 }) // Sắp xếp theo đánh giá cao nhất
+      .sort({ "metrics.averageRating": -1, "metrics.purchaseCount": -1 }) // Sắp xếp theo đánh giá cao nhất và lượt mua nhiều nhất
       .skip(skip)
       .limit(limit)
       .lean();

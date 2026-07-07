@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { 
   BookOpen, ShoppingCart, Search, Heart, Star, Menu, X, 
   ChevronRight, LogOut, Loader2, User, Clock, Flame, 
-  ChevronLeft, ArrowRight, ShieldCheck, Mail, Phone, MapPin, Check
+  ChevronLeft, ArrowRight, ShieldCheck, Mail, Phone, MapPin, Check, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BookDetailPage from "./BookDetailPage"; // Import component BookDetailPage
@@ -46,20 +46,47 @@ export default function MainWebPage() {
   
   // State quản lý dữ liệu từ Database
   const [books, setBooks] = useState([]);
+  const [recommendedBooks, setRecommendedBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // State quản lý giao diện
   const [cartCount, setCartCount] = useState(0);
   const [liked, setLiked] = useState({});
+  const [brokenImages, setBrokenImages] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [addedToCart, setAddedToCart] = useState({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  
+  const fetchCartCount = async () => {
+    try {
+      const response = await fetch("/api/cart", { credentials: "include" });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const count = (result.data.items || []).reduce((sum, item) => sum + item.quantity, 0);
+          setCartCount(count);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching cart count:", err);
+    }
+  };
+  
+  // State quản lý tìm kiếm lai đa tầng
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
   
   // Điều hướng hiển thị
   const [selectedBook, setSelectedBook] = useState(null); 
   const [detailedBookId, setDetailedBookId] = useState(null); 
+  const [detailedBook, setDetailedBook] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-
+ 
   // Điều khiển thanh danh mục thả xuống (Category Menu) & Trạng thái thanh Search bar
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -69,8 +96,8 @@ export default function MainWebPage() {
     const fetchBooks = async () => {
       setLoading(true);
       try {
-        let url = "http://localhost:5001/api/books?limit=50"; 
-        const response = await fetch(url);
+        let url = "/api/books?limit=250"; 
+        const response = await fetch(url, { credentials: "include" });
         if (!response.ok) {
           throw new Error("Không thể tải dữ liệu từ máy chủ");
         }
@@ -83,7 +110,40 @@ export default function MainWebPage() {
         setLoading(false);
       }
     };
-    fetchBooks();
+
+    const fetchRecommendations = async () => {
+      try {
+        const response = await fetch("/api/recommendations?pageType=Homepage", { credentials: "include" });
+        if (response.ok) {
+          const result = await response.json();
+          setRecommendedBooks(result.data || []);
+        } else {
+          console.warn("Lỗi khi tải gợi ý từ máy chủ");
+        }
+      } catch (err) {
+        console.error("Lỗi fetch recommendations:", err);
+      }
+    };
+
+    const checkAuthAndLoad = async () => {
+      await fetchBooks();
+      try {
+        const response = await fetch("/api/auth/check-auth", { credentials: "include" });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setUser(data.user);
+            setIsAuthenticated(true);
+            await fetchRecommendations();
+            await fetchCartCount();
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi kiểm tra đăng nhập:", err);
+      }
+    };
+
+    checkAuthAndLoad();
   }, []);
 
   // Tự động chạy Slide Hero sau mỗi 4 giây
@@ -109,6 +169,51 @@ export default function MainWebPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Debounced search logic with request cancellation
+  useEffect(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError("");
+      setActiveSearchQuery("");
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError("");
+
+    const controller = new AbortController();
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmedQuery)}`, {
+          signal: controller.signal
+        });
+        if (!response.ok) {
+          throw new Error("Failed to load search results.");
+        }
+        const result = await response.json();
+        setSearchResults(result.data || []);
+        setActiveSearchQuery(trimmedQuery);
+      } catch (err) {
+        if (err.name === "AbortError") {
+          return; // Request was aborted, ignore
+        }
+        console.error("[Frontend Search] Error:", err.message);
+        setSearchError(err.message || "Something went wrong.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => {
+      clearTimeout(delayDebounceFn);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
   // Lọc ra danh sách thể loại (Genres) duy nhất từ database
   const dynamicGenres = books.reduce((acc, book) => {
     if (book.genres && Array.isArray(book.genres)) {
@@ -117,14 +222,42 @@ export default function MainWebPage() {
     return acc;
   }, []);
 
-  // Thêm sản phẩm vào giỏ hàng
-  const handleAddToCart = (id) => {
-    setCartCount((c) => c + 1);
-    setAddedToCart((prev) => ({ ...prev, [id]: true }));
-    setTimeout(() => setAddedToCart((prev) => ({ ...prev, [id]: false })), 1500);
+  // Thêm sản phẩm vào giỏ hàng thực tế qua API
+  const handleAddToCart = async (id) => {
+    if (!isAuthenticated) {
+      alert("Please login or sign up to add items to your cart!");
+      navigate("/login");
+      return;
+    }
+    try {
+      const response = await fetch("/api/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookId: id, quantity: 1 }),
+        credentials: "include"
+      });
+      const result = await response.json();
+      if (result.success) {
+        setAddedToCart((prev) => ({ ...prev, [id]: true }));
+        setTimeout(() => setAddedToCart((prev) => ({ ...prev, [id]: false })), 1500);
+        fetchCartCount();
+      } else {
+        alert(result.message || "Failed to add to cart");
+      }
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      alert("Failed to connect to cart service");
+    }
   };
 
-  const toggleLike = (id) => setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleLike = (id) => {
+    if (!isAuthenticated) {
+      alert("Please login or sign up to save books to your wishlist!");
+      navigate("/login");
+      return;
+    }
+    setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleSelectKeyword = (keyword) => {
     setSearchQuery(keyword);
@@ -134,99 +267,166 @@ export default function MainWebPage() {
   // =========================================================
   // BỘ LỌC CHIA KHU VỰC SÁCH NĂNG ĐỘNG - KHÔNG TRÙNG LẶP
   // =========================================================
-  const getRecommendedBooks = () => books.slice(0, 5);
-  const getBooksOfMay = () => books.filter(b => b.tags?.includes("may") || b.genres?.some(g => g.toLowerCase().includes("fiction"))).slice(0, 5);
-  const getBooksOfJune = () => books.filter(b => b.tags?.includes("june") || b.genres?.some(g => g.toLowerCase().includes("history"))).slice(0, 5);
+  const getRecommendedBooks = () => {
+    if (recommendedBooks && recommendedBooks.length > 0) {
+      return recommendedBooks.filter(b => !brokenImages.has(b._id)).slice(0, 10);
+    }
+    return books.filter(b => !brokenImages.has(b._id)).slice(0, 10);
+  };
+  const getBooksOfMay = () => books.filter(b => !brokenImages.has(b._id)).filter(b => b.tags?.includes("may") || b.genres?.some(g => g.toLowerCase().includes("fiction"))).slice(0, 10);
+  const getBooksOfJune = () => books.filter(b => !brokenImages.has(b._id)).filter(b => b.tags?.includes("june") || b.genres?.some(g => g.toLowerCase().includes("history"))).slice(0, 10);
   
   const getBusinessSelfHelpBooks = () => {
     const recommendedIds = getRecommendedBooks().map(b => b._id);
     const targetKeywords = ["business", "finance", "self-help", "psychology", "skills"];
     
-    let filtered = books.filter(book => {
+    let filtered = books.filter(b => !brokenImages.has(b._id)).filter(book => {
       const hasMatchingGenre = book.genres?.some(g => targetKeywords.includes(g.toLowerCase()));
       const hasMatchingTag = book.tags?.some(t => targetKeywords.includes(t.toLowerCase()));
       return (hasMatchingGenre || hasMatchingTag) && !recommendedIds.includes(book._id);
     });
 
     if (filtered.length === 0) {
-      filtered = books.slice(5, 10);
+      filtered = books.filter(b => !brokenImages.has(b._id)).slice(10, 20);
     }
 
-    return filtered.slice(0, 5);
+    return filtered.slice(0, 10);
   };
 
-  // Tìm sách đang được xem chi tiết tại vùng trang riêng biệt
-  const currentDetailedBook = books.find(b => b._id === detailedBookId);
+  // Click handler to route to book details and log click interactions
+  const handleBookClick = async (book, rankPosition = 1) => {
+    if (!book) return;
+    setDetailedBookId(book._id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      await fetch("/api/recommendations/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookId: book._id,
+          position: rankPosition,
+          pageType: "Homepage"
+        }),
+        credentials: "include"
+      });
+    } catch (err) {
+      console.error("Error logging recommendation click:", err);
+    }
+  };
+
+  // Dynamic fetch for detailedBook details (to support recommendations and deep clicks)
+  useEffect(() => {
+    if (!detailedBookId) {
+      setDetailedBook(null);
+      return;
+    }
+    const localBook = books.find(b => b._id === detailedBookId);
+    if (localBook) {
+      setDetailedBook(localBook);
+    } else {
+      const fetchDetail = async () => {
+        setDetailLoading(true);
+        try {
+          const response = await fetch(`/api/books/${detailedBookId}`, { credentials: "include" });
+          const result = await response.json();
+          if (result.success && result.data) {
+            setDetailedBook(result.data);
+          } else {
+            console.error("Failed to load book detail from API:", result.message);
+          }
+        } catch (err) {
+          console.error("Error fetching book details:", err);
+        } finally {
+          setDetailLoading(false);
+        }
+      };
+      fetchDetail();
+    }
+  }, [detailedBookId, books]);
 
   // Tìm các sách liên quan (Cùng thể loại)
   const getRelatedBooks = (currentBook) => {
     if (!currentBook) return [];
     return books
-      .filter(b => b._id !== currentBook._id && b.genres?.some(g => currentBook.genres?.includes(g)))
-      .slice(0, 5);
+      .filter(b => b._id !== currentBook._id && !brokenImages.has(b._id) && b.genres?.some(g => currentBook.genres?.includes(g)))
+      .slice(0, 10);
   };
 
   // Hàm render cấu trúc thẻ card hiển thị sách chuẩn hóa
-  const renderBookCard = (book) => {
+  const renderBookCard = (book, index = 0) => {
     if (!book) return null;
+    const primaryGenre = book.genres && book.genres.length > 0 ? book.genres[0] : "General";
     return (
-      <div key={book._id} className="bg-white rounded-xl border border-gray-100 shadow-xs hover:shadow-md transition-all duration-300 group flex flex-col h-full relative overflow-hidden">
+      <div 
+        key={book._id}
+        className="group bg-white rounded-none border border-gray-100 hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex flex-col overflow-hidden p-3.5 relative"
+      >
+        {/* Favorite button */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); toggleLike(book._id); }}
+          className="absolute top-5 right-5 z-10 w-8 h-8 rounded-none bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-sm text-gray-400 hover:text-red-500 hover:scale-105 active:scale-95 transition-all"
+        >
+          <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500" : ""}`} />
+        </button>
+
+        {/* Cover image */}
         <div 
-          onClick={() => setSelectedBook(book)} 
-          className="h-64 relative bg-gray-50 flex items-center justify-center overflow-hidden cursor-pointer"
+          onClick={() => handleBookClick(book, index + 1)}
+          className="w-full aspect-[3/4] bg-gray-50 rounded-none overflow-hidden relative cursor-pointer mb-4 select-none"
         >
           <img 
-            src={book.images?.medium || book.images?.large || "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover"} 
-            alt={book.title} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          {book.tags && book.tags.includes("bestseller") && (
-            <span className="absolute top-3 left-3 bg-red-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded shadow-sm tracking-wider">
-              BESTSELLER
-            </span>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleLike(book._id);
+            src={book.images?.medium || book.images?.large || "https://placehold.co/300x400?text=No+Cover"} 
+            alt={book.title}
+            onError={() => {
+              setBrokenImages(prev => {
+                const updated = new Set(prev);
+                updated.add(book._id);
+                return updated;
+              });
             }}
-            className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-full hover:bg-white z-10 shadow-xs text-gray-500 hover:text-red-500 transition-colors"
-          >
-            <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500" : ""}`} />
-          </button>
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.08)_0%,_rgba(0,0,0,0.15)_3%,_rgba(255,255,255,0.1)_5%,_rgba(0,0,0,0)_12%)] pointer-events-none" />
         </div>
 
-        <div className="p-4 flex flex-col flex-grow">
-          <div onClick={() => setSelectedBook(book)} className="cursor-pointer flex-grow flex flex-col">
-            <span className="text-[10px] font-bold text-[#F16323] uppercase tracking-wider line-clamp-1">
-              {book.genres && book.genres.length > 0 ? book.genres[0] : "General"}
+        {/* Centered text fields */}
+        <div className="flex-grow flex flex-col text-center space-y-1.5 px-1">
+          <div>
+            <span className="text-[10px] font-bold text-[#E25313] bg-orange-50/70 border border-orange-100/60 px-2 py-0.5 rounded-none uppercase tracking-wider">
+              {primaryGenre}
             </span>
-            <h3 className="text-sm font-bold text-gray-900 mt-1 leading-snug line-clamp-2 group-hover:text-[#F16323] transition-colors" title={book.title}>
-              {book.title}
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{book.author}</p>
-            
-            <div className="flex-grow"></div>
-            
-            <div className="flex items-center gap-1 mt-3 bg-gray-50 px-2 py-1 rounded w-max">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-gray-700">{book.metrics?.averageRating || 0}</span>
-              <span className="text-[11px] text-gray-400">({(book.metrics?.reviewCount || 0).toLocaleString()})</span>
-            </div>
           </div>
+          
+          <h3 
+            onClick={() => handleBookClick(book, index + 1)}
+            className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-[#F16323] cursor-pointer transition-colors pt-1 min-h-[40px] leading-snug"
+          >
+            {book.title}
+          </h3>
+          
+          <p className="text-[11px] text-gray-400 font-medium truncate">
+            by {book.author || "Unknown Author"}
+          </p>
 
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-            <span className="text-base font-extrabold text-gray-900">${book.price?.toFixed(2) || "0.00"}</span>
-            <button
-              onClick={() => handleAddToCart(book._id)}
-              className={`text-xs font-bold px-3 py-2 rounded-lg transition-all shadow-xs ${
-                addedToCart[book._id] ? "bg-green-500 text-white" : "bg-[#F16323] text-white hover:bg-orange-600 active:scale-95"
-              }`}
-            >
-              {addedToCart[book._id] ? "Added ✓" : "Add to Cart"}
-            </button>
+          <div className="flex items-center justify-center gap-2 pt-1.5 pb-2">
+            <span className="text-base font-black text-gray-900">${book.price?.toFixed(2)}</span>
+            {book.oldPrice && (
+              <span className="text-xs font-bold text-gray-300 line-through">${book.oldPrice?.toFixed(2)}</span>
+            )}
           </div>
         </div>
+
+        {/* Action Button: white background, thick orange border */}
+        <button
+          onClick={() => handleAddToCart(book._id)}
+          className={`w-full h-9 rounded-sm font-bold text-xs uppercase tracking-wider transition-all active:scale-[0.97] mt-auto flex items-center justify-center border-2 ${
+            addedToCart[book._id] 
+              ? "bg-emerald-50 border-emerald-500 text-emerald-600" 
+              : "bg-white border-[#F16323] text-[#F16323] hover:bg-[#F16323] hover:text-white"
+          }`}
+        >
+          <span>{addedToCart[book._id] ? "Added" : "Add to Cart"}</span>
+        </button>
       </div>
     );
   };
@@ -243,7 +443,7 @@ export default function MainWebPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           
           <div className="flex items-center gap-6" ref={dropdownRef}>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setDetailedBookId(null); setSelectedBook(null); }}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setDetailedBookId(null); setSelectedBook(null); setSearchQuery(""); setSearchResults([]); }}>
               <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
               <span className="text-xl font-black text-gray-900 tracking-tight">BookHaven</span>
             </div>
@@ -384,11 +584,47 @@ export default function MainWebPage() {
 
           {/* Tiện Ích Người Dùng */}
           <div className="flex items-center gap-3">
-            <button onClick={() => alert("Profile feature coming soon")} className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200/40 transition-colors">
+            {/* Spotify Wrapped button */}
+            <button 
+              onClick={() => {
+                if (!isAuthenticated) {
+                  alert("Please login or sign up to view your 2026 Reading Wrapped!");
+                  navigate("/login");
+                } else {
+                  navigate("/lookback");
+                }
+              }} 
+              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-purple-600 via-[#F16323] to-purple-600 text-white rounded-xl text-xs font-black shadow-md shadow-purple-500/15 hover:shadow-purple-500/25 transition-all hover:scale-102 active:scale-98 animate-pulse"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-current text-amber-300" />
+              <span className="hidden sm:inline">2026 WRAPPED</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                if (!isAuthenticated) {
+                  alert("Please login or sign up to view your profile!");
+                  navigate("/login");
+                } else {
+                  alert("Profile feature coming soon");
+                }
+              }} 
+              className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200/40 transition-colors"
+            >
               <User className="w-5 h-5" />
             </button>
 
-            <button className="relative p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200/40 transition-colors">
+            <button 
+              onClick={() => {
+                if (!isAuthenticated) {
+                  alert("Please login or sign up to view your shopping cart!");
+                  navigate("/login");
+                } else {
+                  navigate("/cart");
+                }
+              }}
+              className="relative p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200/40 transition-colors"
+            >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#F16323] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
@@ -397,10 +633,16 @@ export default function MainWebPage() {
               )}
             </button>
 
-            <button onClick={() => navigate("/login")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
-              <LogOut className="w-4 h-4" />
-              <span className="hidden lg:block">Logout</span>
-            </button>
+            {isAuthenticated ? (
+              <button onClick={() => navigate("/login")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden lg:block">Logout</span>
+              </button>
+            ) : (
+              <button onClick={() => navigate("/login")} className="flex items-center gap-1.5 px-4 py-2 bg-[#F16323] hover:bg-[#d9561c] text-white rounded-xl text-xs font-black transition-all">
+                Login
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -419,183 +661,285 @@ export default function MainWebPage() {
       ) : !detailedBookId ? (
         
         // =================================================================
-        // KHÔNG GIAN 1: TRANG CHỦ / LANDING PAGE BẬT SLIDER
+        // KHÔNG GIAN 1: TRANG CHỦ HOẶC TRANG KẾT QUẢ TÌM KIẾM
         // =================================================================
         <div className="flex-grow">
-          
-          {/* ================= HERO CAROUSEL SLIDER ĐÃ UPDATE GRADIENT ĐA TẦNG ================= */}
-          <div className="relative overflow-hidden h-[520px] md:h-[600px] bg-slate-950">
-            {heroSlides.map((slide, idx) => (
-              <div
-                key={idx}
-                className={`absolute inset-0 bg-gradient-to-br ${slide.bg} text-white px-8 py-16 flex items-center transition-all duration-1000 ease-in-out transform ${
-                  idx === currentSlide ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-full scale-95"
-                }`}
-              >
-                {/* Lớp nền kết cấu Grid đè nhẹ tạo độ sâu khối nghệ thuật */}
-                <div className="absolute inset-0 opacity-15 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
-                
-                {/* Đốm sáng Gradient hình tròn khuếch tán làm bừng sáng góc bìa sách */}
-                <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-                <div className="absolute bottom-10 left-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-[90px] pointer-events-none"></div>
+          {searchQuery.trim() !== "" ? (
+            /* BỘ LỌC KẾT QUẢ TÌM KIẾM LAI ĐA TẦNG (HYBRID SEARCH RESULTS) */
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-8 min-h-[50vh]">
+              <div className="flex items-center gap-3 border-b border-gray-200/60 pb-4">
+                <div className="w-1.5 h-7 bg-[#F16323] rounded-full" />
+                <h2 className="text-xl font-black tracking-tight text-gray-900 uppercase">
+                  Search Results for "{searchQuery}"
+                </h2>
+                {isSearching && (
+                  <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md animate-pulse">
+                    AI Ranking...
+                  </span>
+                )}
+              </div>
 
-                <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 items-center gap-12 relative z-10">
-                  <div className="md:col-span-7 space-y-6">
-                    <span className={`inline-block backdrop-blur-md text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest border shadow-xs ${slide.badgeBg}`}>
-                      {slide.badge}
-                    </span>
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-black leading-[1.1] tracking-tighter drop-shadow-md">
-                      {slide.title}
-                    </h1>
-                    <p className="text-white/80 text-sm md:text-lg max-w-xl font-medium leading-relaxed opacity-90">
-                      {slide.desc}
-                    </p>
-                    <div className="flex items-center gap-4 pt-4">
-                      <button className="bg-white text-gray-900 font-black px-8 py-4 rounded-2xl text-sm hover:bg-orange-50 transition-all shadow-xl inline-flex items-center gap-2 active:scale-95 group">
-                        <span>Explore Collection</span> 
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                      <div className="hidden sm:flex items-center gap-2 text-white/70 text-sm font-bold border-l border-white/20 pl-4">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        4.9/5 Rating
+              {isSearching && searchResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                  <Loader2 className="w-10 h-10 animate-spin text-[#F16323] mb-4" />
+                  <p className="text-base font-semibold">Performing Intent Parsing, BM25 & Semantic Search...</p>
+                </div>
+              ) : searchError ? (
+                <div className="flex flex-col items-center justify-center py-20 text-red-500">
+                  <p className="text-base font-bold">Search Service Failed: {searchError}</p>
+                  <p className="text-xs text-gray-400 mt-1">Please ensure the AI Engine backend is running.</p>
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-32 text-gray-400">
+                  <BookOpen className="w-12 h-12 text-gray-300 mb-4" />
+                  <p className="text-base font-bold text-gray-600">No books found</p>
+                  <p className="text-xs text-gray-400 mt-1">Try typing another query or keyword (e.g. title, author, genre).</p>
+                </div>
+              ) : (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Found {searchResults.length} relevance-ranked matches
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    {searchResults.filter(book => !brokenImages.has(book._id)).map((book) => renderBookCard(book))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* DIỆN MẠO TRANG LANDING PAGE TIÊU CHUẨN */
+            <>
+              {/* ================= HERO CAROUSEL SLIDER ĐÃ UPDATE GRADIENT ĐA TẦNG ================= */}
+              <div className="relative overflow-hidden h-[520px] md:h-[600px] bg-slate-950">
+                {heroSlides.map((slide, idx) => (
+                  <div
+                    key={idx}
+                    className={`absolute inset-0 bg-gradient-to-br ${slide.bg} text-white px-8 py-16 flex items-center transition-all duration-1000 ease-in-out transform ${
+                      idx === currentSlide ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-full scale-95"
+                    }`}
+                  >
+                    {/* Lớp nền kết cấu Grid đè nhẹ tạo độ sâu khối nghệ thuật */}
+                    <div className="absolute inset-0 opacity-15 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
+                    
+                    {/* Đốm sáng Gradient hình tròn khuếch tán làm bừng sáng góc bìa sách */}
+                    <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+                    <div className="absolute bottom-10 left-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-[90px] pointer-events-none"></div>
+
+                    <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 items-center gap-12 relative z-10">
+                      <div className="md:col-span-7 space-y-6">
+                        <span className={`inline-block backdrop-blur-md text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest border shadow-xs ${slide.badgeBg}`}>
+                          {slide.badge}
+                        </span>
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black leading-[1.1] tracking-tighter drop-shadow-md">
+                          {slide.title}
+                        </h1>
+                        <p className="text-white/80 text-sm md:text-lg max-w-xl font-medium leading-relaxed opacity-90">
+                          {slide.desc}
+                        </p>
+                        <div className="flex items-center gap-4 pt-4">
+                          <button className="bg-white text-gray-900 font-black px-8 py-4 rounded-2xl text-sm hover:bg-orange-50 transition-all shadow-xl inline-flex items-center gap-2 active:scale-95 group">
+                            <span>Explore Collection</span> 
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                          <div className="hidden sm:flex items-center gap-2 text-white/70 text-sm font-bold border-l border-white/20 pl-4">
+                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                            4.9/5 Rating
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Cụm 3 Sách Xếp Chồng Floating Stack 3D */}
+                      <div className="hidden md:col-span-5 md:flex justify-center items-center relative h-[400px]">
+                        {books.slice(idx * 2, idx * 2 + 3).map((b, bIdx) => {
+                          const positions = [
+                            { width: '190px', height: '270px', transform: 'translateX(-90px) rotate(-12deg) translateY(20px)', zIndex: 10, opacity: 0.75 },
+                            { width: '230px', height: '330px', transform: 'translateX(0px) rotate(0deg) translateY(-10px)', zIndex: 30, opacity: 1 },
+                            { width: '190px', height: '270px', transform: 'translateX(90px) rotate(12deg) translateY(30px)', zIndex: 20, opacity: 0.8 }
+                          ];
+                          const currentPos = positions[bIdx] || positions[1];
+                          
+                          return (
+                            <div 
+                              key={b._id} 
+                              onClick={() => setSelectedBook(b)} 
+                              className="absolute rounded-2xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] overflow-hidden border border-white/10 cursor-pointer hover:scale-105 hover:z-40 transition-all duration-500 bg-white"
+                              style={{
+                                width: currentPos.width,
+                                height: currentPos.height,
+                                transform: currentPos.transform,
+                                zIndex: currentPos.zIndex,
+                                opacity: currentPos.opacity
+                              }}
+                            >
+                              <img 
+                                src={b.images?.large || b.images?.medium || "https://placehold.co/300x400"} 
+                                alt="" 
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover";
+                                }}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Cụm 3 Sách Xếp Chồng Floating Stack 3D */}
-                  <div className="hidden md:col-span-5 md:flex justify-center items-center relative h-[400px]">
-                    {books.slice(idx * 2, idx * 2 + 3).map((b, bIdx) => {
-                      const positions = [
-                        { width: '190px', height: '270px', transform: 'translateX(-90px) rotate(-12deg) translateY(20px)', zIndex: 10, opacity: 0.75 },
-                        { width: '230px', height: '330px', transform: 'translateX(0px) rotate(0deg) translateY(-10px)', zIndex: 30, opacity: 1 },
-                        { width: '190px', height: '270px', transform: 'translateX(90px) rotate(12deg) translateY(30px)', zIndex: 20, opacity: 0.8 }
-                      ];
-                      const currentPos = positions[bIdx] || positions[1];
-                      
-                      return (
-                        <div 
-                          key={b._id} 
-                          onClick={() => setSelectedBook(b)} 
-                          className="absolute rounded-2xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] overflow-hidden border border-white/10 cursor-pointer hover:scale-105 hover:z-40 transition-all duration-500 bg-white"
-                          style={{
-                            width: currentPos.width,
-                            height: currentPos.height,
-                            transform: currentPos.transform,
-                            zIndex: currentPos.zIndex,
-                            opacity: currentPos.opacity
-                          }}
-                        >
-                          <img src={b.images?.large || b.images?.medium || "https://placehold.co/300x400"} alt="" className="w-full h-full object-cover"/>
-                        </div>
-                      );
-                    })}
+                ))}
+
+                {/* Điều khiển Button điều hướng dạng tròn sang trọng */}
+                <button 
+                  onClick={() => setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))}
+                  className="absolute left-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white transition-all shadow-lg z-30"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white transition-all shadow-lg z-30"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {/* Chỉ số trang Slide (Dots) */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2.5 z-30">
+                  {heroSlides.map((_, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => setCurrentSlide(i)}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${i === currentSlide ? "w-10 bg-white" : "w-2.5 bg-white/40"}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* MAIN GRID ROWS */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-14">
+                
+                {/* KHU VỰC 1: SÁCH ĐỀ XUẤT TỪ NGƯỜI BÁN */}
+                <section className="space-y-4">
+                  <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-1.5 h-6 bg-[#F16323] rounded-full" />
+                      <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Book Recommendations from Seller</h2>
+                    </div>
+                    <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md">Editor's Picks</span>
                   </div>
-                </div>
-              </div>
-            ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    {getRecommendedBooks().map((book, idx) => renderBookCard(book, idx))}
+                  </div>
+                </section>
 
-            {/* Điều khiển Button điều hướng dạng tròn sang trọng */}
-            <button 
-              onClick={() => setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))}
-              className="absolute left-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white transition-all shadow-lg z-30"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-              className="absolute right-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 text-white transition-all shadow-lg z-30"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+                {/* KHU VỰC 2: SÁCH CỦA THÁNG 5 */}
+                <section className="space-y-4">
+                  <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                      <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Featured: Books of May</h2>
+                    </div>
+                    <span className="text-xs font-medium text-gray-400">May Collection</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    {getBooksOfMay().map((book, idx) => renderBookCard(book, idx))}
+                  </div>
+                </section>
 
-            {/* Chỉ số trang Slide (Dots) */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2.5 z-30">
-              {heroSlides.map((_, i) => (
-                <div 
-                  key={i} 
-                  onClick={() => setCurrentSlide(i)}
-                  className={`h-2 rounded-full transition-all cursor-pointer ${i === currentSlide ? "w-10 bg-white" : "w-2.5 bg-white/40"}`}
-                />
-              ))}
-            </div>
-          </div>
+                {/* KHU VỰC 3: SÁCH CỦA THÁNG 6 */}
+                <section className="space-y-4">
+                  <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
+                      <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Upcoming: Books of June</h2>
+                    </div>
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">New Arrival</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    {getBooksOfJune().map((book, idx) => renderBookCard(book, idx))}
+                  </div>
+                </section>
 
-          {/* MAIN GRID ROWS */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-14">
-            
-            {/* KHU VỰC 1: SÁCH ĐỀ XUẤT TỪ NGƯỜI BÁN */}
-            <section className="space-y-4">
-              <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-1.5 h-6 bg-[#F16323] rounded-full" />
-                  <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Book Recommendations from Seller</h2>
-                </div>
-                <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md">Editor's Picks</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-                {getRecommendedBooks().map((book) => renderBookCard(book))}
-              </div>
-            </section>
+                {/* KHU VỰC 4: SÁCH KINH DOANH & PHÁT TRIỂN BẢN THÂN */}
+                <section className="space-y-4">
+                  <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
+                      <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Top Business & Self-Help Books</h2>
+                    </div>
+                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md">Personal Growth</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    {getBusinessSelfHelpBooks().map((book, idx) => renderBookCard(book, idx))}
+                  </div>
+                </section>
 
-            {/* KHU VỰC 2: SÁCH CỦA THÁNG 5 */}
-            <section className="space-y-4">
-              <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-                  <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Featured: Books of May</h2>
-                </div>
-                <span className="text-xs font-medium text-gray-400">May Collection</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-                {getBooksOfMay().map((book) => renderBookCard(book))}
-              </div>
-            </section>
-
-            {/* KHU VỰC 3: SÁCH CỦA THÁNG 6 */}
-            <section className="space-y-4">
-              <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
-                  <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Upcoming: Books of June</h2>
-                </div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">New Arrival</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-                {getBooksOfJune().map((book) => renderBookCard(book))}
-              </div>
-            </section>
-
-            {/* KHU VỰC 4: SÁCH KINH DOANH & PHÁT TRIỂN BẢN THÂN */}
-            <section className="space-y-4">
-              <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
-                  <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Top Business & Self-Help Books</h2>
-                </div>
-                <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md">Personal Growth</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-                {getBusinessSelfHelpBooks().map((book) => renderBookCard(book))}
-              </div>
-            </section>
-
-          </div>
+            </>
+          )}
         </div>
       ) : (
-        
-        // =================================================================
-        // KHÔNG GIAN 2: TRANG CHI TIẾT QUYỂN SÁCH RIÊNG BIỆT 
-        // =================================================================
-        <BookDetailPage 
-          book={currentDetailedBook}
-          onBack={() => setDetailedBookId(null)}
-          onAddToCart={handleAddToCart}
-          onToggleLike={toggleLike}
-          addedToCart={addedToCart}
-          liked={liked}
-          getRelatedBooks={getRelatedBooks}
-          renderBookCard={renderBookCard}
-        />
+        /* DETAIL PAGE VIEW */
+        detailLoading ? (
+          <div className="flex-grow flex items-center justify-center py-20 bg-transparent">
+            <div className="w-8 h-8 border-4 border-[#F16323] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        ) : (
+          <BookDetailPage 
+            book={detailedBook}
+            onBackToHome={() => { setDetailedBookId(null); setSearchQuery(""); }}
+            onBackToGenre={(genre) => { setDetailedBookId(null); setSearchQuery(genre); }}
+            onAddToCart={handleAddToCart}
+            onToggleLike={toggleLike}
+            addedToCart={addedToCart}
+            liked={liked}
+            getRelatedBooks={getRelatedBooks}
+            brokenImages={brokenImages}
+            renderBookCard={(b) => (
+              <div 
+                key={b._id} 
+                onClick={() => {
+                  setDetailedBookId(b._id);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="group bg-white rounded-none border border-gray-100 p-3.5 flex flex-col relative text-center cursor-pointer hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300"
+              >
+                {/* Cover image in related books */}
+                <div className="w-full aspect-[3/4] bg-gray-50 rounded-none overflow-hidden mb-3 relative select-none">
+                  <img 
+                    src={b.images?.medium || "https://placehold.co/300x400?text=No+Cover"} 
+                    alt="" 
+                    onError={() => {
+                      setBrokenImages(prev => {
+                        const updated = new Set(prev);
+                        updated.add(b._id);
+                        return updated;
+                      });
+                    }}
+                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.08)_0%,_rgba(0,0,0,0.15)_3%,_rgba(255,255,255,0.1)_5%,_rgba(0,0,0,0)_12%)] pointer-events-none" />
+                </div>
+                <h4 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#F16323] transition-colors">{b.title}</h4>
+                <span className="text-xs font-black text-gray-900 mt-1 mb-3">${b.price?.toFixed(2)}</span>
+                
+                {/* Nút bấm của sách liên quan: Nền trắng, viền cam dày (border-2), bo tròn nhẹ (rounded-sm) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); 
+                    handleAddToCart(b._id);
+                  }}
+                  className={`w-full h-8 rounded-sm font-bold text-[10px] uppercase tracking-wider transition-all active:scale-[0.97] mt-auto flex items-center justify-center border-2 ${
+                    addedToCart[b._id] 
+                      ? "bg-emerald-50 border-emerald-500 text-emerald-600" 
+                      : "bg-white border-[#F16323] text-[#F16323] hover:bg-[#F16323] hover:text-white"
+                  }`}
+                >
+                  <span>{addedToCart[b._id] ? "Added" : "Add to Cart"}</span>
+                </button>
+              </div>
+            )}
+          />
+        )
       )}
 
       {/* ==================== BOOK DETAILS POPUP MODAL NGUYÊN BẢN (2 CỘT) ==================== */}
@@ -616,6 +960,10 @@ export default function MainWebPage() {
               <img 
                 src={selectedBook.images?.medium || selectedBook.images?.large || "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover"} 
                 alt={selectedBook.title}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover";
+                }}
                 className="w-full h-full object-cover"
               />
             </div>

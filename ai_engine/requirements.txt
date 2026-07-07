@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sentence-transformers
+rank_bm25
+numpy
+pymongo
+python-dotenv
+pydantic
+apscheduler

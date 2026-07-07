@@ -1,185 +1,382 @@
-import { Star, Heart, Book, Calendar, Layers, Hash, MessageSquare, ChevronRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Star, Heart, Minus, Plus, ChevronRight, Info } from "lucide-react";
 
 export default function BookDetailPage({ 
   book, 
-  onBack, 
+  onBackToHome,    
+  onBackToGenre,   
   onAddToCart, 
   onToggleLike, 
   addedToCart, 
   liked, 
   getRelatedBooks, 
-  renderBookCard 
+  renderBookCard,
+  brokenImages = new Set()
 }) {
-  if (!book) return <div className="text-center py-10 text-gray-400">Book dataset missing.</div>;
+  const [activeTab, setActiveTab] = useState("description");
+  const [quantity, setQuantity] = useState(1);
+  const [recBooks, setRecBooks] = useState([]);
+  const [recLoading, setRecLoading] = useState(false);
+
+  // Dynamic recommendations fetch
+  useEffect(() => {
+    if (!book?._id) return;
+    const fetchDetailRecs = async () => {
+      setRecLoading(true);
+      try {
+        const response = await fetch(`/api/recommendations?pageType=Book%20Detail&itemId=${book._id}`);
+        const data = await response.json();
+        if (data.success && data.data) {
+          setRecBooks(data.data.slice(0, 5));
+        }
+      } catch (error) {
+        console.error("Error fetching detail recs:", error);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    fetchDetailRecs();
+  }, [book?._id]);
+
+  if (!book) return <div className="text-center py-12 text-gray-400 font-medium">Book metadata not found.</div>;
+
+  const currentGenre = book.genres && book.genres.length > 0 ? book.genres[0] : null;
+
+  const handleIncrement = () => setQuantity((prev) => prev + 1);
+  const handleDecrement = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  const scrollToTabs = (tabName) => {
+    setActiveTab(tabName);
+    const element = document.getElementById("book-details-tabs");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Helper function to render published date nicely
+  const renderPublishedDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    
+    const cleanStr = String(dateStr).trim();
+    if (/^\d{4}$/.test(cleanStr)) {
+      return cleanStr;
+    }
+
+    try {
+      const parsedDate = new Date(dateStr);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toLocaleDateString("en-GB", { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric' 
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    return cleanStr;
+  };
 
   return (
-    <div className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-12 animate-fade-in">
-      <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-        <span className="hover:text-[#F16323] cursor-pointer" onClick={onBack}>Home</span>
-        <ChevronRight className="w-3 h-3" />
-        <span className="hover:text-[#F16323] cursor-pointer" onClick={onBack}>Shop Directory</span>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-gray-900 font-bold truncate max-w-[200px]">{book.title}</span>
+    <div className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 space-y-10 text-gray-900 font-sans">
+      
+      {/* 1. Breadcrumb navigation */}
+      <div className="flex items-center flex-wrap gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+        <span 
+          className="hover:text-[#F16323] cursor-pointer transition-colors" 
+          onClick={onBackToHome}
+        >
+          Home
+        </span>
+        {currentGenre && (
+          <>
+            <ChevronRight className="w-3 h-3 text-gray-300 stroke-[3]" />
+            <span 
+              className="hover:text-[#F16323] cursor-pointer transition-colors max-w-[140px] truncate"
+              onClick={() => onBackToGenre ? onBackToGenre(currentGenre) : onBackToHome()}
+            >
+              {currentGenre}
+            </span>
+          </>
+        )}
+        <ChevronRight className="w-3 h-3 text-gray-300 stroke-[3]" />
+        <span className="text-gray-800 font-black max-w-[200px] sm:max-w-[400px] truncate">
+          {book.title}
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-5 bg-white border border-gray-100 rounded-3xl p-6 shadow-xs flex flex-col items-center justify-center sticky top-28">
-          <div className="w-full max-w-[360px] aspect-[3/4] rounded-2xl shadow-xl overflow-hidden bg-white border border-gray-100 relative group flex items-center justify-center">
-            <img 
-              src={book.images?.large || book.images?.medium || "https://placehold.co/600x800/e2e8f0/64748b?text=No+Cover"} 
-              alt={book.title} 
-              className="w-full h-full object-contain p-2 bg-gray-50 transition-transform duration-500 group-hover:scale-102"
+      {/* 2. Main product structure */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+        
+        {/* Left Column: Cover with book page stacks effect */}
+        <div className="lg:col-span-5 flex justify-center sticky top-24">
+          <div className="w-full max-w-[330px] aspect-[2/3] relative flex items-center justify-center bg-transparent group select-none py-4">
+            
+            {/* Pages Stack Effect */}
+            <div 
+              className="absolute top-4 bottom-4 left-4 right-1 rounded-r-[3px] pointer-events-none transform translate-x-[10px] translate-y-[2px]"
+              style={{
+                backgroundColor: '#fcfaf6',
+                boxShadow: '3px 3px 8px rgba(0,0,0,0.06), 1px 1px 2px rgba(0,0,0,0.04)',
+                backgroundImage: `
+                  linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+                  linear-gradient(to bottom, transparent 92%, rgba(0,0,0,0.03) 92%, rgba(0,0,0,0.03) 100%)
+                `,
+                backgroundSize: '3px 100%, 100% 3px'
+              }}
             />
-            {book.tags?.includes("bestseller") && (
-              <span className="absolute top-4 left-4 bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded shadow-md tracking-wider">
-                POPULAR CHOICE
-              </span>
-            )}
+
+            {/* Front Cover Frame */}
+            <div className="relative w-full h-full border-l border-black/20 rounded-r-[2px] transition-transform duration-300 hover:rotate-[-0.5deg]
+              shadow-[8px_14px_28px_rgba(0,0,0,0.14),_1px_2px_5px_rgba(0,0,0,0.08),_-1px_0px_1px_rgba(0,0,0,0.05)]"
+            >
+              <img 
+                src={book.images?.large || book.images?.medium || "https://placehold.co/600x800?text=No+Cover"} 
+                alt={book.title} 
+                className="w-full h-full object-cover rounded-r-[2px]"
+              />
+
+              {/* spine curve lighting overlay */}
+              <div className="absolute inset-0 pointer-events-none rounded-r-[2px]
+                bg-[linear-gradient(to_right,_rgba(255,255,255,0.12)_0%,_rgba(0,0,0,0.22)_3%,_rgba(255,255,255,0.18)_5%,_rgba(0,0,0,0.04)_8%,_rgba(0,0,0,0)_12%)]" 
+              />
+              
+              {/* reflecting cover boundary line */}
+              <div className="absolute top-0 right-0 h-full w-[1.5px] bg-white/20 pointer-events-none rounded-r-[1px]" />
+            </div>
+
           </div>
         </div>
 
+        {/* Right Column: Info and Order buttons */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs space-y-3">
-            <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-3.5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               {book.genres?.map((g, i) => (
-                <span key={i} className="text-[10px] font-black text-[#F16323] bg-orange-50 border border-orange-100/70 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                <span 
+                  key={i} 
+                  className="text-[10px] font-black text-[#E25313] uppercase tracking-widest cursor-default select-none"
+                >
                   {g}
                 </span>
               ))}
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
+            
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight">
               {book.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-gray-500">
-              <p>By: <span className="text-[#F16323] font-bold hover:underline cursor-pointer">{book.author}</span></p>
-              <div className="w-1 h-1 bg-gray-300 rounded-full" />
-              <div className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span className="text-gray-900 font-bold">{book.metrics?.averageRating || 0}</span>
-                <span>({(book.metrics?.reviewCount || 0).toLocaleString()} reviews)</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Database Retail Price</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-gray-900">${book.price?.toFixed(2)}</span>
-                {book.oldPrice && (
-                  <span className="text-sm font-bold text-gray-400 line-through">${book.oldPrice.toFixed(2)}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <button 
-                onClick={() => onToggleLike(book._id)}
-                className="p-3.5 bg-gray-100 border border-gray-200/60 rounded-xl text-gray-500 hover:text-red-500 transition-colors shadow-2xs"
-              >
-                <Heart className={`w-5 h-5 ${liked[book._id] ? "fill-red-500 text-red-500" : ""}`} />
-              </button>
-              <button 
-                onClick={() => onAddToCart(book._id)}
-                className={`flex-1 sm:flex-none px-8 py-3.5 rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 text-white ${
-                  addedToCart[book._id] ? "bg-green-500" : "bg-[#F16323] hover:bg-orange-600"
-                }`}
-              >
-                {addedToCart[book._id] ? "Added to Cart ✓" : "Purchase"}
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">Product Specifications</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100/50">
-                <Book className="w-4 h-4 text-[#F16323]" />
-                <div>
-                  <span className="text-[10px] text-gray-400 font-bold block">Publisher</span>
-                  <span className="text-xs font-bold text-gray-700">{book.publisher || "N/A"}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100/50">
-                <Calendar className="w-4 h-4 text-[#F16323]" />
-                <div>
-                  <span className="text-[10px] text-gray-400 font-bold block">Published Date</span>
-                  <span className="text-xs font-bold text-gray-700">
-                    {book.publishedDate ? new Date(book.publishedDate).toLocaleDateString() : "N/A"}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100/50">
-                <Layers className="w-4 h-4 text-[#F16323]" />
-                <div>
-                  <span className="text-[10px] text-gray-400 font-bold block">Page Count</span>
-                  <span className="text-xs font-bold text-gray-700">{book.pageCount || "N/A"} pages</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100/50">
-                <Hash className="w-4 h-4 text-[#F16323]" />
-                <div>
-                  <span className="text-[10px] text-gray-400 font-bold block">ISBN / Reference Key</span>
-                  <span className="text-xs font-bold text-gray-700 truncate block max-w-[180px]">{book.isbn || book._id}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs space-y-3">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2">Book Description</h3>
-            <p className="text-xs md:text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-              {book.description || "No full description available for this book dataset inside the repository."}
+            
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+              Author: <span className="text-gray-800 font-black underline underline-offset-2 hover:text-[#F16323] cursor-pointer transition-colors">{book.author}</span>
             </p>
           </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Pricing Row */}
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block">Price</span>
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-3xl font-black text-gray-900 tracking-tight">${book.price?.toFixed(2)}</span>
+              {book.oldPrice && (
+                <span className="text-sm font-bold text-gray-400 line-through">${book.oldPrice.toFixed(2)}</span>
+              )}
+            </div>
+          </div>
+
+
+
+          {/* Key highlights (trust indicators) */}
+          <div className="grid grid-cols-2 gap-3 max-w-lg pt-1 pb-3 text-[11px] text-gray-500 font-bold border-b border-gray-50">
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-orange-50 text-[#F16323] flex items-center justify-center text-[10px]">✓</span>
+              <span>Publisher Verified</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px]">✓</span>
+              <span>Fast Delivery</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px]">✓</span>
+              <span>Secure Transactions</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-[10px]">★</span>
+              <span>Top Rated Choice</span>
+            </div>
+          </div>
+
+          {/* Quantity and Cart Controls */}
+          <div className="flex flex-wrap items-center gap-3 max-w-lg pt-2">
+            <div className="flex items-center border border-gray-200 h-11 bg-white">
+              <button 
+                onClick={handleDecrement}
+                className="px-3 h-full text-gray-400 hover:text-gray-700 active:bg-gray-50 transition-colors"
+              >
+                <Minus className="w-3.5 h-3.5 stroke-[3]" />
+              </button>
+              <span className="w-10 text-center text-xs font-black select-none text-gray-800">
+                {quantity}
+              </span>
+              <button 
+                onClick={handleIncrement}
+                className="px-3 h-full text-gray-400 hover:text-gray-700 active:bg-gray-50 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              </button>
+            </div>
+
+            <button 
+              onClick={() => {
+                for(let i=0; i<quantity; i++) onAddToCart(book._id);
+              }}
+              className={`flex-1 min-w-[180px] h-11 rounded-none font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] text-white ${
+                addedToCart[book._id] ? "bg-emerald-600" : "bg-[#F16323] hover:bg-orange-600"
+              }`}
+            >
+              {addedToCart[book._id] ? "Added to Cart ✓" : "Add to Cart"}
+            </button>
+
+            <button 
+              onClick={() => onToggleLike(book._id)}
+              className="w-11 h-11 flex items-center justify-center bg-white border border-gray-200 rounded-none text-gray-400 hover:text-red-500 hover:border-gray-300 transition-all active:scale-95"
+            >
+              <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500 border-transparent" : ""}`} />
+            </button>
+          </div>
+
+          {/* Tab Information Control */}
+          <div id="book-details-tabs" className="pt-6 scroll-mt-28">
+            <div className="flex border-b border-gray-200 gap-6">
+              <button
+                onClick={() => setActiveTab("description")}
+                className={`pb-2.5 text-xs font-black uppercase tracking-widest -mb-[1px] transition-all ${
+                  activeTab === "description"
+                    ? "border-b-2 border-gray-900 text-gray-900"
+                    : "border-b-2 border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Description
+              </button>
+              <button
+                onClick={() => setActiveTab("details")}
+                className={`pb-2.5 text-xs font-black uppercase tracking-widest -mb-[1px] transition-all ${
+                  activeTab === "details"
+                    ? "border-b-2 border-gray-900 text-gray-900"
+                    : "border-b-2 border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Details
+              </button>
+              <button
+                onClick={() => setActiveTab("reviews")}
+                className={`pb-2.5 text-xs font-black uppercase tracking-widest -mb-[1px] transition-all ${
+                  activeTab === "reviews"
+                    ? "border-b-2 border-gray-900 text-gray-900"
+                    : "border-b-2 border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Reviews ({book.metrics?.reviewCount || 0})
+              </button>
+            </div>
+
+            {/* Tab contents */}
+            <div className="py-6 min-h-[140px]">
+              {activeTab === "description" && (
+                <div className="text-xs text-gray-500 font-medium leading-relaxed whitespace-pre-line max-w-2xl">
+                  {book.description || "No full description available for this volume."}
+                </div>
+              )}
+
+              {/* Tab Details */}
+              {activeTab === "details" && (
+                <div className="flex items-start gap-6 max-w-md text-left py-2">
+                  <div className="shrink-0 pt-0.5">
+                    <Info className="w-6 h-6 text-[#F16323] opacity-95" />
+                  </div>
+                  
+                  <div className="space-y-1.5 text-xs text-gray-900">
+                    {book.pageCount ? (
+                      <div>
+                        <span className="font-black inline-block w-28">Pages:</span>
+                        <span className="text-gray-600 font-medium">{book.pageCount}</span>
+                      </div>
+                    ) : null}
+
+                    <div>
+                      <span className="font-black inline-block w-28">Publisher:</span>
+                      <span className="text-gray-600 font-medium">{book.publisher || "1517 Publishing"}</span>
+                    </div>
+                    <div>
+                      <span className="font-black inline-block w-28">Imprint:</span>
+                      <span className="text-gray-600 font-medium">{book.imprint || book.publisher || "1517 Publishing"}</span>
+                    </div>
+                    <div>
+                      <span className="font-black inline-block w-28">Publication Date:</span>
+                      <span className="text-gray-600 font-medium">
+                        {renderPublishedDate(book.publishedDate)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-black inline-block w-28">ISBN:</span>
+                      <span className="text-gray-600 font-medium break-all">{book.isbn || "9781964419275"}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "reviews" && (
+                <div className="space-y-6 max-w-xl">
+                  <div className="flex gap-6 items-center bg-gray-50/70 p-5 border border-gray-100">
+                    <div className="text-center pr-6 border-r border-gray-200 shrink-0">
+                      <span className="text-3xl font-black text-gray-900 block leading-none">{book.metrics?.averageRating || 0}</span>
+                      <div className="flex justify-center gap-0.5 my-1.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider block">Rating</span>
+                    </div>
+                    
+                    <div className="flex-grow space-y-1.5 text-[10px] font-bold text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <span className="w-10 font-extrabold text-gray-500">5 Stars</span>
+                        <div className="flex-1 h-1.5 bg-gray-100 overflow-hidden"><div className="bg-amber-400 h-full w-[85%]" /></div>
+                        <span className="w-6 text-right text-gray-600">85%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-10 font-extrabold text-gray-500">4 Stars</span>
+                        <div className="flex-1 h-1.5 bg-gray-100 overflow-hidden"><div className="bg-amber-400 h-full w-[15%]" /></div>
+                        <span className="w-6 text-right text-gray-600">15%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    No customer reviews yet.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* RATING GRID */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-xs space-y-6">
-        <h3 className="text-base font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-[#F16323]" /> Customer Reviews & Ratings
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-gray-50 p-5 rounded-2xl border border-gray-100">
-          <div className="md:col-span-3 text-center md:border-r border-gray-200/70 py-2">
-            <span className="text-4xl font-black text-gray-900 block">{book.metrics?.averageRating || 0}</span>
-            <div className="flex justify-center gap-0.5 my-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-              ))}
-            </div>
-            <span className="text-xs text-gray-400">Store Average Rating</span>
-          </div>
-          <div className="md:col-span-9 space-y-2 text-xs font-semibold text-gray-600 px-2">
-            <div className="flex items-center gap-2">
-              <span className="w-12">5 Stars</span>
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden"><div className="bg-amber-400 h-full w-[85%]" /></div>
-              <span className="w-8 text-right">85%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-12">4 Stars</span>
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden"><div className="bg-amber-400 h-full w-[10%]" /></div>
-              <span className="w-8 text-right">10%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-12">3 Stars</span>
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden"><div className="bg-amber-400 h-full w-[5%]" /></div>
-              <span className="w-8 text-right">5%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* BOOK ALSO LIKE SECTION */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
-          <div className="w-1.5 h-5 bg-orange-500 rounded-full" />
-          <h3 className="text-base font-black text-gray-900 uppercase tracking-tight">Books You May Also Like</h3>
+      {/* 4. You may also like dynamic recommendations */}
+      <div className="space-y-4 pt-8 border-t border-gray-200/80">
+        <div className="flex items-center justify-between">
+          <h3 className="text-md font-black text-gray-900 uppercase tracking-tight">You may also like</h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-          {getRelatedBooks(book).length > 0 ? (
-            getRelatedBooks(book).map(b => renderBookCard(b))
+          {recLoading ? (
+            <div className="col-span-full text-center text-gray-400 py-10 text-xs font-bold animate-pulse">Loading dynamic recommendations...</div>
+          ) : recBooks.length > 0 ? (
+            recBooks.filter(b => !brokenImages.has(b._id)).slice(0, 10).map(b => renderBookCard(b))
+          ) : getRelatedBooks(book).length > 0 ? (
+            getRelatedBooks(book).filter(b => !brokenImages.has(b._id)).slice(0, 10).map(b => renderBookCard(b))
           ) : (
-            <div className="col-span-full text-center text-gray-400 py-4">No related books found.</div>
+            <div className="col-span-full text-center text-gray-400 py-6 text-xs font-semibold">No similar items found.</div>
           )}
         </div>
       </div>
