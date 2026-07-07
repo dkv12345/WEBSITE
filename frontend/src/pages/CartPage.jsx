@@ -34,10 +34,15 @@ export default function CartPage() {
   const [deliveryEstimate, setDeliveryEstimate] = useState("");
 
   // Split Delivery Address states (4 fields)
-  const [country, setCountry] = useState("Vietnam");
+  const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [subDistrict, setSubDistrict] = useState("");
   const [specificAddress, setSpecificAddress] = useState("");
+
+  // GeoNames Location states
+  const [countries, setCountries] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
   // Promo code states
   const [couponCode, setCouponCode] = useState("");
@@ -94,8 +99,66 @@ export default function CartPage() {
     }
   };
 
+  const fetchCountries = async () => {
+    try {
+      const response = await fetch("/api/shipping/countries");
+      const result = await response.json();
+      if (result.success && result.data) {
+        setCountries(result.data);
+
+        // Find if initial country is Vietnam and default to it
+        const vnCountry = result.data.find(c => c.countryName === "Vietnam");
+        if (vnCountry) {
+          setCountry("Vietnam");
+          fetchCities(vnCountry.geonameId);
+        } else if (result.data.length > 0) {
+          setCountry(result.data[0].countryName);
+          fetchCities(result.data[0].geonameId);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching countries:", err);
+    }
+  };
+
+  const fetchCities = async (geonameId) => {
+    setLoadingLocations(true);
+    try {
+      const response = await fetch(`/api/shipping/cities/${geonameId}`);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setCities(result.data);
+      }
+    } catch (err) {
+      console.error("Error fetching cities:", err);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleCountryChange = (selectedCountryName) => {
+    setCountry(selectedCountryName);
+    setCity("");
+    setSubDistrict(""); // Reset city and ward
+
+    if (errors.country) {
+      setErrors(prev => ({ ...prev, country: false }));
+    }
+    if (errors.city) {
+      setErrors(prev => ({ ...prev, city: false }));
+    }
+
+    const selected = countries.find(c => c.countryName === selectedCountryName);
+    if (selected && selected.geonameId) {
+      fetchCities(selected.geonameId);
+    } else {
+      setCities([]);
+    }
+  };
+
   useEffect(() => {
     fetchCartDetails();
+    fetchCountries();
   }, []);
 
   // Remove item from database cart
@@ -247,59 +310,59 @@ export default function CartPage() {
   };
 
   const paymentOptions = [
-    { 
-      id: "cod", 
-      name: "Cash on Delivery (COD)", 
+    {
+      id: "cod",
+      name: "Cash on Delivery (COD)",
       icon: (
         <svg viewBox="0 0 48 30" width="36" height="22" xmlns="http://www.w3.org/2000/svg" className="rounded border border-gray-200/50 shadow-2xs">
-          <rect width="48" height="30" rx="4" fill="#FFF1EB"/>
-          <rect x="8" y="7" width="32" height="16" rx="2" fill="#FF5E1E"/>
-          <circle cx="17" cy="18" r="2" fill="#FFF"/>
-          <circle cx="31" cy="18" r="2" fill="#FFF"/>
-          <path d="M13 10h12v4H13z" fill="#FFF" opacity="0.3"/>
+          <rect width="48" height="30" rx="4" fill="#FFF1EB" />
+          <rect x="8" y="7" width="32" height="16" rx="2" fill="#FF5E1E" />
+          <circle cx="17" cy="18" r="2" fill="#FFF" />
+          <circle cx="31" cy="18" r="2" fill="#FFF" />
+          <path d="M13 10h12v4H13z" fill="#FFF" opacity="0.3" />
           <text x="24" y="19" fontFamily="sans-serif" fontSize="8" fontWeight="black" fill="#FFF" textAnchor="middle">COD</text>
         </svg>
       )
     },
-    { 
-      id: "banking", 
-      name: "Bank Transfer / QR Pay", 
+    {
+      id: "banking",
+      name: "Bank Transfer / QR Pay",
       icon: (
         <svg viewBox="0 0 48 30" width="36" height="22" xmlns="http://www.w3.org/2000/svg" className="rounded border border-gray-200/50 shadow-2xs">
-          <rect width="48" height="30" rx="4" fill="#EBF3FF"/>
-          <rect x="8" y="7" width="32" height="16" rx="2" fill="#0A59CC"/>
-          <path d="M12 11h4v1h-4zm0 2h4v1h-4zm0 2h4v1h-4zm6-4h4v1h-4zm0 2h4v1h-4zm0 2h4v1h-4zm6-4h12v5H24z" fill="#FFF" opacity="0.25"/>
+          <rect width="48" height="30" rx="4" fill="#EBF3FF" />
+          <rect x="8" y="7" width="32" height="16" rx="2" fill="#0A59CC" />
+          <path d="M12 11h4v1h-4zm0 2h4v1h-4zm0 2h4v1h-4zm6-4h4v1h-4zm0 2h4v1h-4zm0 2h4v1h-4zm6-4h12v5H24z" fill="#FFF" opacity="0.25" />
           <text x="24" y="18" fontFamily="sans-serif" fontSize="7" fontWeight="black" fill="#FFF" textAnchor="middle">QR PAY</text>
         </svg>
       )
     },
-    { 
-      id: "visa_master", 
-      name: "Visa / Mastercard / JCB", 
+    {
+      id: "visa_master",
+      name: "Visa / Mastercard / JCB",
       icon: (
         <div className="flex items-center gap-1">
           <svg viewBox="0 0 48 30" width="28" height="18" xmlns="http://www.w3.org/2000/svg" className="rounded border border-gray-200/85 shadow-2xs">
-            <rect width="48" height="30" rx="4" fill="#F7F7F7"/>
-            <path d="M18.8 19.5h2.5L22.9 10h-2.5l-1.6 9.5zm11.9-9.2c-.6-.3-1.6-.6-2.8-.6-3.1 0-5.3 1.6-5.3 4 0 1.7 1.6 2.7 2.8 3.3 1.2.6 1.6 1 1.6 1.5 0 .8-1 1.1-1.9 1.1-1.6 0-2.5-.2-3.8-.8l-.5-.2-.5 3.1c.9.4 2.5.8 4.2.8 3.3 0 5.4-1.6 5.4-4.1 0-1.4-.8-2.4-2.7-3.3-1.2-.6-1.9-1-1.9-1.6 0-.6.7-1.1 1.7-1.1.9 0 1.6.2 2.5.6l.3.2.4-3zm9.8 9.2L42.8 10h-2.3c-.7 0-1.3.4-1.6.9L34.6 19.5h2.6l.5-1.4H41l.2 1.4h2.3zm-3.2-3.9h-2.6c-.1-.4.9-2.5.9-2.5l.5 1.7.1.8h1.1zm-28.7 3.9h2.6l4.2-9.5H31L28 15c-.4-1-.7-1.6-1.3-2.2-.6-.6-1.5-1-2.9-1.2l.2-.9h-3.9l-.4 1.8c.8.2 1.7.5 2.5.9.8.4 1.2.9 1.5 1.5l-3 6.9z" fill="#1434CB"/>
+            <rect width="48" height="30" rx="4" fill="#F7F7F7" />
+            <path d="M18.8 19.5h2.5L22.9 10h-2.5l-1.6 9.5zm11.9-9.2c-.6-.3-1.6-.6-2.8-.6-3.1 0-5.3 1.6-5.3 4 0 1.7 1.6 2.7 2.8 3.3 1.2.6 1.6 1 1.6 1.5 0 .8-1 1.1-1.9 1.1-1.6 0-2.5-.2-3.8-.8l-.5-.2-.5 3.1c.9.4 2.5.8 4.2.8 3.3 0 5.4-1.6 5.4-4.1 0-1.4-.8-2.4-2.7-3.3-1.2-.6-1.9-1-1.9-1.6 0-.6.7-1.1 1.7-1.1.9 0 1.6.2 2.5.6l.3.2.4-3zm9.8 9.2L42.8 10h-2.3c-.7 0-1.3.4-1.6.9L34.6 19.5h2.6l.5-1.4H41l.2 1.4h2.3zm-3.2-3.9h-2.6c-.1-.4.9-2.5.9-2.5l.5 1.7.1.8h1.1zm-28.7 3.9h2.6l4.2-9.5H31L28 15c-.4-1-.7-1.6-1.3-2.2-.6-.6-1.5-1-2.9-1.2l.2-.9h-3.9l-.4 1.8c.8.2 1.7.5 2.5.9.8.4 1.2.9 1.5 1.5l-3 6.9z" fill="#1434CB" />
           </svg>
           <svg viewBox="0 0 48 30" width="28" height="18" xmlns="http://www.w3.org/2000/svg" className="rounded border border-gray-200/85 shadow-2xs">
-            <rect width="48" height="30" rx="4" fill="#F7F7F7"/>
-            <circle cx="20" cy="15" r="9" fill="#EB001B" opacity="0.9"/>
-            <circle cx="28" cy="15" r="9" fill="#F79E1B" opacity="0.9"/>
-            <path d="M24 10.4c1.2 1.2 2 3 2 4.6s-.8 3.4-2 4.6c-1.2-1.2-2-3-2-4.6s.8-3.4 2-4.6z" fill="#FF5F00"/>
+            <rect width="48" height="30" rx="4" fill="#F7F7F7" />
+            <circle cx="20" cy="15" r="9" fill="#EB001B" opacity="0.9" />
+            <circle cx="28" cy="15" r="9" fill="#F79E1B" opacity="0.9" />
+            <path d="M24 10.4c1.2 1.2 2 3 2 4.6s-.8 3.4-2 4.6c-1.2-1.2-2-3-2-4.6s.8-3.4 2-4.6z" fill="#FF5F00" />
           </svg>
         </div>
       )
     },
-    { 
-      id: "paypal", 
-      name: "PayPal Express", 
+    {
+      id: "paypal",
+      name: "PayPal Express",
       icon: (
         <svg viewBox="0 0 48 30" width="36" height="22" xmlns="http://www.w3.org/2000/svg" className="rounded border border-gray-200/85 shadow-2xs">
-          <rect width="48" height="30" rx="4" fill="#F7F7F7"/>
-          <path d="M30.7 10.3c-.2-1-.7-1.8-1.5-2.4-.8-.6-2-1-3.5-1h-6.8c-.5 0-.9.4-1 .9L15 22.5c-.1.4.2.8.6.8h3.8c.4 0 .8-.3.9-.7L21.7 14c.1-.4.4-.7.9-.7h1.4c2.6 0 4.6-1 5.3-3.9.3-1 .2-1.7-.6-2.1z" fill="#003087"/>
-          <path d="M28.7 13.3c-.2-1-.7-1.8-1.5-2.4-.8-.6-2-1-3.5-1h-6.8c-.5 0-.9.4-1 .9L13 25.5c-.1.4.2.8.6.8h3.8c.4 0 .8-.3.9-.7L19.7 17c.1-.4.4-.7.9-.7h1.4c2.6 0 4.6-1 5.3-3.9.3-1 .2-1.7-.6-2.1z" fill="#0079C1" opacity="0.85"/>
-          <path d="M22.7 17.3h1.4c2.6 0 4.6-1 5.3-3.9.1-.5.1-1 0-1.4-.4 2.5-2.2 3.5-4.8 3.5h-1.4c-.4 0-.8.3-.9.7l-1.4 8.7c-.1.4.2.8.6.8h3.1l1.4-8.7c.1-.4.4-.7.9-.7z" fill="#00457C"/>
+          <rect width="48" height="30" rx="4" fill="#F7F7F7" />
+          <path d="M30.7 10.3c-.2-1-.7-1.8-1.5-2.4-.8-.6-2-1-3.5-1h-6.8c-.5 0-.9.4-1 .9L15 22.5c-.1.4.2.8.6.8h3.8c.4 0 .8-.3.9-.7L21.7 14c.1-.4.4-.7.9-.7h1.4c2.6 0 4.6-1 5.3-3.9.3-1 .2-1.7-.6-2.1z" fill="#003087" />
+          <path d="M28.7 13.3c-.2-1-.7-1.8-1.5-2.4-.8-.6-2-1-3.5-1h-6.8c-.5 0-.9.4-1 .9L13 25.5c-.1.4.2.8.6.8h3.8c.4 0 .8-.3.9-.7L19.7 17c.1-.4.4-.7.9-.7h1.4c2.6 0 4.6-1 5.3-3.9.3-1 .2-1.7-.6-2.1z" fill="#0079C1" opacity="0.85" />
+          <path d="M22.7 17.3h1.4c2.6 0 4.6-1 5.3-3.9.1-.5.1-1 0-1.4-.4 2.5-2.2 3.5-4.8 3.5h-1.4c-.4 0-.8.3-.9.7l-1.4 8.7c-.1.4.2.8.6.8h3.1l1.4-8.7c.1-.4.4-.7.9-.7z" fill="#00457C" />
         </svg>
       )
     },
@@ -314,7 +377,7 @@ export default function CartPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
@@ -364,10 +427,10 @@ export default function CartPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
+
             {/* LEFT COLUMN: SELECTED ITEMS & ADDRESS (60% width equivalent) */}
             <div className="lg:col-span-7 space-y-8">
-              
+
               {/* Selected Items section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
@@ -410,7 +473,7 @@ export default function CartPage() {
                               </h3>
                               <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">{book.author}</p>
                             </div>
-                            
+
                             {/* Pill-shaped Quantity selector */}
                             <div className="bg-gray-50/80 rounded-full border border-gray-200/50 p-1 flex items-center w-max">
                               <button
@@ -515,20 +578,30 @@ export default function CartPage() {
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block pl-1">
                       Delivery Address
                     </span>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                       {/* Country */}
                       <div className="flex flex-col gap-1">
                         <div className="relative flex items-center">
-                          <Globe className="absolute left-4 w-4 h-4 text-gray-400" />
-                          <input
+                          <Globe className="absolute left-4 w-4 h-4 text-gray-400 z-10" />
+                          <select
                             ref={fieldRefs.country}
-                            type="text"
-                            placeholder="Country (e.g. Vietnam)"
                             value={country}
-                            onChange={(e) => handleInputChange("country", e.target.value, setCountry)}
-                            className={getFormInputStyle("country")}
-                          />
+                            onChange={(e) => handleCountryChange(e.target.value)}
+                            className={`${getFormInputStyle("country")} appearance-none cursor-pointer pr-10`}
+                          >
+                            <option value="" disabled>Select Country</option>
+                            {countries.map(c => (
+                              <option key={c.geonameId || c.countryName} value={c.countryName}>
+                                {c.countryName}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 pointer-events-none text-gray-400">
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                            </svg>
+                          </div>
                         </div>
                         {errors.country && (
                           <span className="text-[10px] text-red-500 font-bold flex items-center gap-1.5 pl-1.5">
@@ -540,15 +613,28 @@ export default function CartPage() {
                       {/* City */}
                       <div className="flex flex-col gap-1">
                         <div className="relative flex items-center">
-                          <MapPin className="absolute left-4 w-4 h-4 text-gray-400" />
-                          <input
+                          <MapPin className="absolute left-4 w-4 h-4 text-gray-400 z-10" />
+                          <select
                             ref={fieldRefs.city}
-                            type="text"
-                            placeholder={country.toLowerCase() === "vietnam" ? "City (Tỉnh/Thành)" : "City / State"}
                             value={city}
                             onChange={(e) => handleInputChange("city", e.target.value, setCity)}
-                            className={getFormInputStyle("city")}
-                          />
+                            disabled={!country || cities.length === 0}
+                            className={`${getFormInputStyle("city")} appearance-none cursor-pointer pr-10 ${(!country || cities.length === 0) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          >
+                            <option value="">
+                              {loadingLocations ? "Loading cities..." : "Select City"}
+                            </option>
+                            {cities.map(c => (
+                              <option key={c.geonameId || c.name} value={c.name}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 pointer-events-none text-gray-400">
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                            </svg>
+                          </div>
                         </div>
                         {errors.city && (
                           <span className="text-[10px] text-red-500 font-bold flex items-center gap-1.5 pl-1.5">
@@ -588,11 +674,10 @@ export default function CartPage() {
                           placeholder="Specific Address (Street name, House number, Building suite)"
                           value={specificAddress}
                           onChange={(e) => handleInputChange("specificAddress", e.target.value, setSpecificAddress)}
-                          className={`w-full text-xs font-semibold pl-11 pr-4 py-3.5 border focus:outline-none transition-all duration-300 rounded-2xl bg-gray-50/60 border-transparent focus:bg-white resize-none focus:ring-4 focus:ring-orange-500/10 text-gray-800 ${
-                            errors.specificAddress 
-                              ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/10 bg-red-50/[0.04]" 
+                          className={`w-full text-xs font-semibold pl-11 pr-4 py-3.5 border focus:outline-none transition-all duration-300 rounded-2xl bg-gray-50/60 border-transparent focus:bg-white resize-none focus:ring-4 focus:ring-orange-500/10 text-gray-800 ${errors.specificAddress
+                              ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/10 bg-red-50/[0.04]"
                               : "focus:border-[#F16323]"
-                          }`}
+                            }`}
                         />
                       </div>
                       {errors.specificAddress && (
@@ -610,14 +695,14 @@ export default function CartPage() {
 
             {/* RIGHT COLUMN: DISPATCHERS & STICKY SUMMARY (40% width equivalent) */}
             <div className="lg:col-span-5 space-y-6 h-fit sticky top-24">
-              
+
               {/* 1. PROMO VOUCHER (Sleek Inline Apply Button Layout) */}
               <div className="bg-white rounded-3xl p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100/60">
                 <h3 className="text-xs font-black text-gray-800 mb-3 flex items-center gap-2 uppercase tracking-wider">
                   <Ticket className="w-4 h-4 text-[#F16323]" />
                   Promo Code / Voucher
                 </h3>
-                
+
                 <div className="relative flex items-center bg-gray-50/80 rounded-2xl border border-gray-150 overflow-hidden">
                   <input
                     type="text"
@@ -633,15 +718,15 @@ export default function CartPage() {
                     Apply
                   </button>
                 </div>
-                
+
                 {appliedCoupon && (
                   <div className="mt-3.5 flex items-center justify-between bg-green-50 text-green-700 px-3.5 py-2.5 rounded-2xl text-[11px] font-bold border border-green-200/50">
                     <span className="flex items-center gap-1.5">
                       <BadgePercent className="w-4 h-4" />
                       Applied: {appliedCoupon}
                     </span>
-                    <button 
-                      onClick={handleRemoveCoupon} 
+                    <button
+                      onClick={handleRemoveCoupon}
                       className="text-red-500 font-bold hover:underline cursor-pointer"
                     >
                       Remove
@@ -656,18 +741,17 @@ export default function CartPage() {
                   <CreditCard className="w-4 h-4 text-[#F16323]" />
                   Payment Method
                 </h3>
-                
+
                 <div className="space-y-3">
                   {paymentOptions.map((option) => {
                     const isSelected = paymentMethod === option.id;
                     return (
                       <label
                         key={option.id}
-                        className={`flex items-center justify-between p-4.5 rounded-2xl border cursor-pointer select-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] ${
-                          isSelected
+                        className={`flex items-center justify-between p-4.5 rounded-2xl border cursor-pointer select-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] ${isSelected
                             ? "border-[#F16323] bg-[#F16323]/[0.02] shadow-[0_4px_16px_rgba(241,99,35,0.06)]"
                             : "border-gray-150 bg-white hover:border-gray-350 hover:shadow-2xs text-gray-700"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3.5">
                           {/* Hidden input */}
@@ -679,19 +763,17 @@ export default function CartPage() {
                             onChange={(e) => setPaymentMethod(e.target.value)}
                             className="sr-only"
                           />
-                          
+
                           {/* Custom Radio dot */}
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-200 ${
-                            isSelected ? "border-[#F16323] bg-white" : "border-gray-300 bg-white"
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-200 ${isSelected ? "border-[#F16323] bg-white" : "border-gray-300 bg-white"
+                            }`}>
                             {isSelected && (
                               <div className="w-2.5 h-2.5 rounded-full bg-[#F16323] animate-scale-up" />
                             )}
                           </div>
 
-                          <span className={`text-[13px] tracking-wide transition-colors ${
-                            isSelected ? "font-black text-gray-900" : "font-semibold text-gray-500"
-                          }`}>
+                          <span className={`text-[13px] tracking-wide transition-colors ${isSelected ? "font-black text-gray-900" : "font-semibold text-gray-500"
+                            }`}>
                             {option.name}
                           </span>
                         </div>
@@ -709,13 +791,13 @@ export default function CartPage() {
               {/* 3. ORDER SUMMARY & Star proceed button */}
               <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100/60 space-y-6">
                 <h2 className="text-base font-black text-gray-900 uppercase tracking-tight">Order Summary</h2>
-                
+
                 <div className="space-y-4 text-xs font-bold text-gray-500">
                   <div className="flex justify-between items-center">
                     <span>Subtotal</span>
                     <span className="text-gray-900 font-extrabold text-sm">${subtotalPrice.toFixed(2)}</span>
                   </div>
-                  
+
                   {discountAmount > 0 && (
                     <div className="flex justify-between items-center text-green-600">
                       <span>Discount</span>

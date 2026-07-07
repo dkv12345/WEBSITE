@@ -9,13 +9,14 @@ from models.recommender import FunkSVD
 class RecommendationService:
     def __init__(self):
         self.mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-        self.db_name = os.getenv("DB_NAME", "test")
+        self.db_name = os.getenv("DB_NAME", "bookstore_db")
         self.decay_lambda = 0.05 # decays to half roughly every 14 days
         
         # Interaction type weights
         self.weights = {
-            "view": 1.0,
-            "cart": 3.0,
+            "view_details": 1.0,
+            "add_to_wishlist": 2.0,
+            "add_to_cart": 3.0,
             "purchase": 5.0
         }
 
@@ -28,10 +29,10 @@ class RecommendationService:
         users_col = db["users"]
         books_col = db["books"]
         interactions_col = db["interactions"]
-        cache_col = db["recommendation_cache"]
+        cache_col = db["recommendation_caches"]
 
-        # Ensure TTL index on calculatedAt field (expires after 7 days)
-        cache_col.create_index("calculatedAt", expireAfterSeconds=7 * 24 * 3600)
+        # Match the Node/Mongoose RecommendationCache model TTL field.
+        cache_col.create_index("expiresAt", expireAfterSeconds=0)
 
         # 1. Ingest Data
         users = list(users_col.find({}, {"_id": 1}))
@@ -69,7 +70,7 @@ class RecommendationService:
             b_idx = book_to_idx[b_id]
 
             # Ingest raw weight
-            action = interaction.get("type", "view")
+            action = interaction.get("interactionType", "view_details")
             w_raw = self.weights.get(action, 1.0)
 
             # Decay factor calculation
@@ -152,7 +153,8 @@ class RecommendationService:
                     {
                         "$set": {
                             "bookIds": top_50_ids,
-                            "calculatedAt": now
+                            "recommendations": top_50_ids,
+                            "expiresAt": now + timedelta(days=7)
                         }
                     },
                     upsert=True

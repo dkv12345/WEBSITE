@@ -1,5 +1,5 @@
 import express from "express";
-import { getRecommendations } from "../controllers/recommendation_controller.js";
+import { getRecommendations, logRecommendationClick } from "../controllers/recommendation_controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
@@ -14,5 +14,13 @@ router.get("/", (req, res, next) => {
   }
   return verifyToken(req, res, next);
 }, getRecommendations);
+
+router.post("/click", (req, res, next) => {
+  if (!req.cookies || !req.cookies.token) {
+    req.userId = null;
+    return next();
+  }
+  return verifyToken(req, res, next);
+}, logRecommendationClick);
 
 export default router;

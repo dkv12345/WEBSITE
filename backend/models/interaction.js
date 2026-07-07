@@ -22,7 +22,9 @@ const interactionSchema = new mongoose.Schema({
   },
   metadata: {
     session_id: { type: String, default: "" },
-    dwell_time_seconds: { type: Number, default: 0 }
+    dwell_time_seconds: { type: Number, default: 0 },
+    rank_position: { type: Number, default: 0 },
+    page_type: { type: String, default: "" }
   },
   timestamp: { 
     type: Date, 

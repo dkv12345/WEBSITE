@@ -1,6 +1,8 @@
 import { Book } from "../models/book_model.js";
+import { Interaction } from "../models/interaction.js";
 import { RecommendationCache } from "../models/recommendation_cache.js";
 import { SearchLog } from "../models/search_log_model.js";
+import { User } from "../models/user_model.js";
 import mongoose from "mongoose";
 
 export const getRecommendations = async (req, res) => {
@@ -22,6 +24,17 @@ export const getRecommendations = async (req, res) => {
     const forceRefresh = req.query.refresh === "true" || pageType === "Book Detail";
     const aiEngineUrl = process.env.AI_ENGINE_URL || "http://127.0.0.1:8000";
 
+    const canUseObjectId = mongoose.isValidObjectId(userId);
+    const [user, latestInteraction, interactionCount] = await Promise.all([
+      canUseObjectId
+        ? User.findById(userId).select("preferences onboardingCompleted").lean()
+        : null,
+      mongoose.isValidObjectId(userId)
+        ? Interaction.findOne({ userId }).sort({ updatedAt: -1, timestamp: -1 }).select("updatedAt timestamp").lean()
+        : null,
+      canUseObjectId ? Interaction.countDocuments({ userId }) : 0
+    ]);
+
     // 2. Check recommendation cache unless forced refresh
     let cachedData = null;
     if (!forceRefresh) {
@@ -30,12 +43,21 @@ export const getRecommendations = async (req, res) => {
 
     let recommendedBookIds = [];
     let source = "cache";
+    const latestInteractionAt = latestInteraction?.updatedAt || latestInteraction?.timestamp || null;
+    const cacheBuiltAt = cachedData?.updatedAt || cachedData?.createdAt || null;
+    const cacheIsStale = Boolean(
+      cachedData &&
+      latestInteractionAt &&
+      cacheBuiltAt &&
+      new Date(latestInteractionAt).getTime() > new Date(cacheBuiltAt).getTime()
+    );
+    const cachedRecommendations = cachedData?.recommendations || cachedData?.bookIds || [];
 
-    if (cachedData && cachedData.recommendations && cachedData.recommendations.length > 0) {
-      recommendedBookIds = cachedData.recommendations;
+    if (!cacheIsStale && cachedRecommendations.length > 0) {
+      recommendedBookIds = cachedRecommendations;
     } else {
       source = "ai_engine";
-      console.log(`[RecommendationController] Cache miss or refresh requested for user ${userId} (Page: ${pageType}). Fetching from AI Engine...`);
+      console.log(`[RecommendationController] Cache miss/stale or refresh requested for user ${userId} (Page: ${pageType}). Fetching from AI Engine...`);
       
       // Call Python AI Engine for recommendations with dynamic context
       const aiEndpoint = `${aiEngineUrl}/api/v1/recommend?userId=${userId}&pageType=${encodeURIComponent(pageType)}` + 
@@ -96,6 +118,12 @@ export const getRecommendations = async (req, res) => {
     res.status(200).json({
       success: true,
       source,
+      personalizationMode: interactionCount > 0 ? "behavioral" : "onboarding",
+      reason: interactionCount > 0
+        ? "Based on your browsing, cart, and purchase activity."
+        : user?.preferences
+          ? "Based on your onboarding genres, authors, and budget."
+          : "Based on popular catalog signals.",
       count: orderedBooks.length,
       data: orderedBooks
     });
@@ -107,5 +135,38 @@ export const getRecommendations = async (req, res) => {
       message: "Server error while retrieving recommendations",
       error: error.message
     });
+  }
+};
+
+export const logRecommendationClick = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { bookId, position, pageType = "Homepage" } = req.body;
+
+    if (!userId) {
+      return res.status(204).send();
+    }
+
+    if (!mongoose.isValidObjectId(bookId)) {
+      return res.status(400).json({ success: false, message: "Invalid bookId" });
+    }
+
+    await Interaction.create({
+      userId,
+      bookId,
+      interactionType: "view_details",
+      implicitWeight: 1.0,
+      metadata: {
+        session_id: req.headers["x-session-id"] || req.cookies?.token || "",
+        rank_position: Number.isFinite(Number(position)) ? Number(position) : 0,
+        page_type: pageType
+      },
+      timestamp: new Date()
+    });
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    console.error("[RecommendationController] Click logging error:", error);
+    res.status(500).json({ success: false, message: "Unable to log recommendation click" });
   }
 };

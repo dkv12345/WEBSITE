@@ -24,7 +24,9 @@ export default function BookDetailPage({
     const fetchDetailRecs = async () => {
       setRecLoading(true);
       try {
-        const response = await fetch(`/api/recommendations?pageType=Book%20Detail&itemId=${book._id}`);
+        const response = await fetch(`/api/recommendations?pageType=Book%20Detail&itemId=${book._id}`, {
+          credentials: "include"
+        });
         const data = await response.json();
         if (data.success && data.data) {
           setRecBooks(data.data.slice(0, 5));

@@ -47,7 +47,7 @@ class SearchService {
         ]
       })
       .select("-embedding_vector")
-      .limit(50)
+      .limit(60)
       .lean();
 
       this.saveSearchLogAsync(userId, query, "fallback", fallbackBooks.length);

@@ -47,6 +47,12 @@ export default function MainWebPage() {
   // State quản lý dữ liệu từ Database
   const [books, setBooks] = useState([]);
   const [recommendedBooks, setRecommendedBooks] = useState([]);
+  const [recommendationMeta, setRecommendationMeta] = useState({
+    mode: "catalog",
+    source: "fallback",
+    reason: "Popular catalog picks while you are browsing as a guest."
+  });
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -112,16 +118,24 @@ export default function MainWebPage() {
     };
 
     const fetchRecommendations = async () => {
+      setRecommendationLoading(true);
       try {
         const response = await fetch("/api/recommendations?pageType=Homepage", { credentials: "include" });
         if (response.ok) {
           const result = await response.json();
           setRecommendedBooks(result.data || []);
+          setRecommendationMeta({
+            mode: result.personalizationMode || "catalog",
+            source: result.source || "ai_engine",
+            reason: result.reason || "Personalized with your latest BookHaven signals."
+          });
         } else {
           console.warn("Lỗi khi tải gợi ý từ máy chủ");
         }
       } catch (err) {
         console.error("Lỗi fetch recommendations:", err);
+      } finally {
+        setRecommendationLoading(false);
       }
     };
 
@@ -272,6 +286,20 @@ export default function MainWebPage() {
       return recommendedBooks.filter(b => !brokenImages.has(b._id)).slice(0, 10);
     }
     return books.filter(b => !brokenImages.has(b._id)).slice(0, 10);
+  };
+  const getRecommendationTitle = () => {
+    if (!isAuthenticated) return "Popular Books For You";
+    const firstName = user?.name?.split(" ")?.[0] || "";
+    if (recommendationMeta.mode === "behavioral") return firstName ? `Recommended For ${firstName}` : "Recommended For You";
+    if (recommendationMeta.mode === "onboarding") return "Picked From Your Onboarding";
+    return "Recommended For You";
+  };
+  const getRecommendationBadge = () => {
+    if (recommendationLoading) return "Personalizing...";
+    if (!isAuthenticated) return "Trending";
+    if (recommendationMeta.mode === "behavioral") return "From Your Activity";
+    if (recommendationMeta.mode === "onboarding") return "From Your Preferences";
+    return recommendationMeta.source === "cache" ? "Cached AI Slate" : "AI Personalized";
   };
   const getBooksOfMay = () => books.filter(b => !brokenImages.has(b._id)).filter(b => b.tags?.includes("may") || b.genres?.some(g => g.toLowerCase().includes("fiction"))).slice(0, 10);
   const getBooksOfJune = () => books.filter(b => !brokenImages.has(b._id)).filter(b => b.tags?.includes("june") || b.genres?.some(g => g.toLowerCase().includes("history"))).slice(0, 10);
@@ -698,7 +726,7 @@ export default function MainWebPage() {
               ) : (
                 <div className="space-y-4 animate-fade-in">
                   <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                    Found {searchResults.length} relevance-ranked matches
+                    Found {searchResults.length} relevance-ranked matches for "{activeSearchQuery}"
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
                     {searchResults.filter(book => !brokenImages.has(book._id)).map((book) => renderBookCard(book))}
@@ -817,14 +845,19 @@ export default function MainWebPage() {
               {/* MAIN GRID ROWS */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-14">
                 
-                {/* KHU VỰC 1: SÁCH ĐỀ XUẤT TỪ NGƯỜI BÁN */}
+                {/* KHU VỰC 1: GỢI Ý CÁ NHÂN HÓA */}
                 <section className="space-y-4">
                   <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-1.5 h-6 bg-[#F16323] rounded-full" />
-                      <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">Book Recommendations from Seller</h2>
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-1.5 h-6 bg-[#F16323] rounded-full mt-0.5" />
+                      <div>
+                        <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">{getRecommendationTitle()}</h2>
+                        <p className="text-xs font-semibold text-gray-400 mt-0.5">
+                          {isAuthenticated ? recommendationMeta.reason : "Sign in to unlock onboarding and behavior-based recommendations."}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md">Editor's Picks</span>
+                    <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md">{getRecommendationBadge()}</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
                     {getRecommendedBooks().map((book, idx) => renderBookCard(book, idx))}

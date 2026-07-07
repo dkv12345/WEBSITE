@@ -12,6 +12,8 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 # Load environment variables from the parent directory if running locally
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
+CACHE_VERSION = 2
+
 class SearchService:
     def __init__(self):
         self.mongo_uri = os.getenv("MONGO_URI")
@@ -64,9 +66,19 @@ class SearchService:
             # Fetch basic fields needed for indexing
             db_books = list(books_col.find(
                 {}, 
-                {"_id": 1, "title": 1, "author": 1, "description": 1, "genres": 1}
+                {
+                    "_id": 1,
+                    "title": 1,
+                    "author": 1,
+                    "description": 1,
+                    "genres": 1,
+                    "inStock": 1,
+                    "stockQuantity": 1,
+                    "metrics": 1
+                }
             ))
             db_count = len(db_books)
+            db_book_by_id = {str(b["_id"]): b for b in db_books}
             print(f"[SearchService] Total books in database: {db_count}")
 
             # Check if we can load from local cache to avoid generating 17k embeddings (saves minutes of startup time)
@@ -76,9 +88,37 @@ class SearchService:
                     with open(self.metadata_cache_path, "r", encoding="utf-8") as f:
                         cached_metadata = json.load(f)
                     
-                    if len(cached_metadata) == db_count:
-                        self.books = cached_metadata
+                    cache_books = cached_metadata
+                    cache_version = 1
+                    if isinstance(cached_metadata, dict):
+                        cache_version = cached_metadata.get("version", 1)
+                        cache_books = cached_metadata.get("books", [])
+
+                    has_recommendation_fields = (
+                        isinstance(cache_books, list) and
+                        (not cache_books or ("inStock" in cache_books[0] and "stockQuantity" in cache_books[0]))
+                    )
+
+                    if len(cache_books) == db_count:
                         self.book_embeddings = np.load(self.embeddings_cache_path)
+                        if cache_version == CACHE_VERSION and has_recommendation_fields:
+                            self.books = cache_books
+                        else:
+                            print("[SearchService] Enriching legacy metadata cache with recommendation fields...")
+                            enriched_books = []
+                            for cached_book in cache_books:
+                                source_book = db_book_by_id.get(str(cached_book.get("id")), {})
+                                stock_quantity = int(source_book.get("stockQuantity", 0) or 0)
+                                enriched = {
+                                    **cached_book,
+                                    "inStock": bool(source_book.get("inStock", stock_quantity > 0)),
+                                    "stockQuantity": stock_quantity,
+                                    "purchaseCount": int(source_book.get("metrics", {}).get("purchaseCount", 0) or 0)
+                                }
+                                enriched_books.append(enriched)
+                            self.books = enriched_books
+                            with open(self.metadata_cache_path, "w", encoding="utf-8") as f:
+                                json.dump({"version": CACHE_VERSION, "books": self.books}, f, ensure_ascii=False, indent=2)
                         cache_valid = True
                         print("[SearchService] Loaded books and embeddings from local cache successfully.")
                 except Exception as cache_err:
@@ -96,13 +136,17 @@ class SearchService:
                     description = b.get("description", "")
                     genres = b.get("genres", [])
                     genres_str = ", ".join(genres) if isinstance(genres, list) else ""
+                    stock_quantity = int(b.get("stockQuantity", 0) or 0)
                     
                     metadata = {
                         "id": b_id,
                         "title": title,
                         "author": author,
                         "description": description,
-                        "genres": genres
+                        "genres": genres,
+                        "inStock": bool(b.get("inStock", stock_quantity > 0)),
+                        "stockQuantity": stock_quantity,
+                        "purchaseCount": int(b.get("metrics", {}).get("purchaseCount", 0) or 0)
                     }
                     self.books.append(metadata)
                     
@@ -120,7 +164,7 @@ class SearchService:
                 # Save cache
                 np.save(self.embeddings_cache_path, self.book_embeddings)
                 with open(self.metadata_cache_path, "w", encoding="utf-8") as f:
-                    json.dump(self.books, f, ensure_ascii=False, indent=2)
+                    json.dump({"version": CACHE_VERSION, "books": self.books}, f, ensure_ascii=False, indent=2)
                 print("[SearchService] Local cache generated and saved.")
 
             # Fit BM25 Keyword Search Index
@@ -281,8 +325,8 @@ class SearchService:
 
             # Extract user preferences from onboarding data
             pref = user.get("preferences", {})
-            fav_categories = [cat.lower() for cat in pref.get("favCategories", [])]
-            fav_authors = [auth.lower() for auth in pref.get("favAuthors", [])]
+            fav_categories = [cat.lower().strip() for cat in pref.get("favCategories", []) if cat]
+            fav_authors = [auth.lower().strip() for auth in pref.get("favAuthors", []) if auth]
             user_budget = pref.get("userBudget")
             B_max = float(user_budget) if user_budget is not None else 50.0
 
@@ -321,7 +365,7 @@ class SearchService:
                     matched_vectors = []
                     for idx, b in enumerate(self.books):
                         genres = [g.lower() for g in b.get("genres", [])]
-                        if any(cat in genres for cat in fav_categories):
+                        if any(cat == genre or cat in genre or genre in cat for cat in fav_categories for genre in genres):
                             matched_vectors.append(self.book_embeddings[idx])
                     
                     if matched_vectors:
@@ -346,7 +390,8 @@ class SearchService:
             for idx, b in enumerate(self.books):
                 # Filter out of stock books if stockQuantity is 0 or inStock is false
                 is_in_stock = b.get("inStock", True)
-                if not is_in_stock:
+                stock_quantity = int(b.get("stockQuantity", 0) or 0)
+                if not is_in_stock or stock_quantity <= 0:
                     content_scores[idx] = -9.0 # Very low cosine similarity score
                 else:
                     content_scores[idx] = cosine_sims[idx]
@@ -414,7 +459,10 @@ class SearchService:
                 # If Homepage, match candidates with user's onboarding attributes
                 for idx, b in enumerate(self.books):
                     b_genres = [g.lower() for g in b.get("genres", [])]
-                    genre_matches = len(set(b_genres).intersection(fav_categories))
+                    genre_matches = sum(
+                        1 for cat in fav_categories for genre in b_genres
+                        if cat == genre or cat in genre or genre in cat
+                    )
                     b_author = b.get("author", "").lower()
                     author_match = 1.0 if any(auth in b_author for auth in fav_authors) else 0.0
                     semantic_scores[idx] = genre_matches * 1.5 + author_match * 3.0
@@ -426,7 +474,7 @@ class SearchService:
             # Fetch active discount rules from Promotions collection
             discount_rules = []
             try:
-                discount_rules = list(promotions_col.find({"active": True}))
+                discount_rules = list(promotions_col.find({"$or": [{"active": True}, {"isActive": True}]}))
             except Exception as pe:
                 print(f"[SearchService] Promotions collection fetch skipped or empty: {pe}")
 
@@ -468,6 +516,9 @@ class SearchService:
                 for idx, b in enumerate(self.books):
                     b_id = b["id"]
                     price = self.book_prices.get(b_id, 0.0)
+                    if not b.get("inStock", True) or int(b.get("stockQuantity", 0) or 0) <= 0:
+                        candidate_scores[idx] = -9999.0
+                        continue
                     
                     # Apply active promotions (discount rates) if matched
                     discount_rate = 0.0
@@ -478,7 +529,12 @@ class SearchService:
                         if (rule.get("bookId") and str(rule["bookId"]) == b_id) or \
                            (rule.get("author") and rule["author"].lower() in b.get("author", "").lower()) or \
                            (rule_genres and any(g in b_genres for g in rule_genres)):
-                            discount_rate = max(discount_rate, float(rule.get("discountRate", 0.0)))
+                            discount_rate = max(
+                                discount_rate,
+                                float(rule.get("discountRate", rule.get("discountPercentage", 0.0))) / (
+                                    100.0 if rule.get("discountPercentage") is not None else 1.0
+                                )
+                            )
                     
                     discounted_price = price * (1.0 - discount_rate)
                     
