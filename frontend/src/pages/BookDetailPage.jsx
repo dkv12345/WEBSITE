@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Star, Heart, Minus, Plus, ChevronRight, Info } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function BookDetailPage({ 
   book, 
@@ -86,7 +87,7 @@ export default function BookDetailPage({
       {/* 1. Breadcrumb navigation */}
       <div className="flex items-center flex-wrap gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
         <span 
-          className="hover:text-[#D49B00] cursor-pointer transition-colors" 
+          className="hover:text-gold cursor-pointer transition-colors" 
           onClick={onBackToHome}
         >
           Home
@@ -95,7 +96,7 @@ export default function BookDetailPage({
           <>
             <ChevronRight className="w-3 h-3 text-gray-300 stroke-[3]" />
             <span 
-              className="hover:text-[#D49B00] cursor-pointer transition-colors max-w-[140px] truncate"
+              className="hover:text-gold cursor-pointer transition-colors max-w-[140px] truncate"
               onClick={() => onBackToGenre ? onBackToGenre(currentGenre) : onBackToHome()}
             >
               {currentGenre}
@@ -119,7 +120,7 @@ export default function BookDetailPage({
             <div 
               className="absolute top-4 bottom-4 left-4 right-1 rounded-r-[3px] pointer-events-none transform translate-x-[10px] translate-y-[2px]"
               style={{
-                backgroundColor: '#fcfaf6',
+                backgroundColor: 'var(--color-parchment)',
                 boxShadow: '3px 3px 8px rgba(0,0,0,0.06), 1px 1px 2px rgba(0,0,0,0.04)',
                 backgroundImage: `
                   linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
@@ -133,7 +134,8 @@ export default function BookDetailPage({
             <div className="relative w-full h-full border-l border-black/20 rounded-r-[2px] transition-transform duration-300 hover:rotate-[-0.5deg]
               shadow-[8px_14px_28px_rgba(0,0,0,0.14),_1px_2px_5px_rgba(0,0,0,0.08),_-1px_0px_1px_rgba(0,0,0,0.05)]"
             >
-              <img 
+              <motion.img 
+                layoutId={`book-cover-${book._id}`}
                 src={book.images?.large || book.images?.medium || "https://placehold.co/600x800?text=No+Cover"} 
                 alt={book.title} 
                 className="w-full h-full object-cover rounded-r-[2px]"
@@ -158,19 +160,19 @@ export default function BookDetailPage({
               {book.genres?.map((g, i) => (
                 <span 
                   key={i} 
-                  className="text-[10px] font-black text-[#D49B00] uppercase tracking-widest cursor-default select-none"
+                  className="text-[10px] font-cinzel-lbl text-gold uppercase tracking-widest cursor-default select-none"
                 >
                   {g}
                 </span>
               ))}
             </div>
             
-            <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight font-display">
               {book.title}
             </h1>
             
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-              Author: <span className="text-gray-800 font-black underline underline-offset-2 hover:text-[#D49B00] cursor-pointer transition-colors">{book.author}</span>
+              Author: <span className="text-gray-800 font-black underline underline-offset-2 hover:text-gold cursor-pointer transition-colors">{book.author}</span>
             </p>
           </div>
 
@@ -192,7 +194,7 @@ export default function BookDetailPage({
           {/* Key highlights (trust indicators) */}
           <div className="grid grid-cols-2 gap-3 max-w-lg pt-1 pb-3 text-[11px] text-gray-500 font-bold border-b border-gray-50">
             <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-amber-50 text-[#D49B00] flex items-center justify-center text-[10px]">✓</span>
+              <span className="w-5 h-5 rounded-full bg-gold/10 text-gold flex items-center justify-center text-[10px]">✓</span>
               <span>Publisher Verified</span>
             </div>
             <div className="flex items-center gap-2">
@@ -229,23 +231,29 @@ export default function BookDetailPage({
               </button>
             </div>
 
-            <button 
+            <motion.button 
               onClick={() => {
                 for(let i=0; i<quantity; i++) onAddToCart(book._id);
               }}
-              className={`flex-1 min-w-[180px] h-11 rounded-none font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] text-white ${
-                addedToCart[book._id] ? "bg-emerald-600" : "bg-[#D49B00] hover:bg-[#b88600]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className={`flex-1 min-w-[180px] h-11 rounded-none font-black text-xs uppercase tracking-widest transition-all text-white ${
+                addedToCart[book._id] ? "bg-emerald-600" : "bg-cta-gradient hover:bg-cta-gradient-hover shadow-md shadow-gold/10"
               }`}
             >
               {addedToCart[book._id] ? "Added to Cart ✓" : "Add to Cart"}
-            </button>
+            </motion.button>
 
-            <button 
+            <motion.button 
               onClick={() => onToggleLike(book._id)}
-              className="w-11 h-11 flex items-center justify-center bg-white border border-gray-200 rounded-none text-gray-400 hover:text-red-500 hover:border-gray-300 transition-all active:scale-95"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="w-11 h-11 flex items-center justify-center bg-white border border-gray-200 rounded-none text-gray-400 hover:text-red-500 hover:border-gray-300 transition-all"
             >
               <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500 border-transparent" : ""}`} />
-            </button>
+            </motion.button>
           </div>
 
           {/* Tab Information Control */}
@@ -295,7 +303,7 @@ export default function BookDetailPage({
               {activeTab === "details" && (
                 <div className="flex items-start gap-6 max-w-md text-left py-2">
                   <div className="shrink-0 pt-0.5">
-                    <Info className="w-6 h-6 text-[#D49B00] opacity-95" />
+                    <Info className="w-6 h-6 text-gold opacity-95" />
                   </div>
                   
                   <div className="space-y-1.5 text-xs text-gray-900">

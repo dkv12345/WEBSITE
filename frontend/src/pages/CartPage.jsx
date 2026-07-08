@@ -373,7 +373,7 @@ export default function CartPage() {
     if (errors[fieldName]) {
       return `${base} border-red-500/70 focus:border-red-500 focus:ring-red-500/10 bg-red-50/[0.04]`;
     }
-    return `${base} focus:border-[#F16323]`;
+    return `${base} focus:border-gold`;
   };
 
   return (
@@ -381,7 +381,7 @@ export default function CartPage() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="min-h-screen bg-[#FAFAF8] text-gray-900 font-sans pb-16"
+      className="min-h-screen bg-parchment text-ink font-sans pb-16"
     >
       {/* Premium Header */}
       <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-40 backdrop-blur-md bg-white/90">
@@ -394,7 +394,7 @@ export default function CartPage() {
               <ArrowLeft className="w-5 h-5 text-gray-500" />
             </button>
             <div className="flex items-center gap-2.5">
-              <ShoppingCart className="w-6 h-6 text-[#F16323]" />
+              <ShoppingCart className="w-6 h-6 text-gold" />
               <span className="text-xl font-black tracking-tight text-gray-900">Your Basket</span>
             </div>
           </div>
@@ -406,7 +406,7 @@ export default function CartPage() {
       <div className="max-w-7xl mx-auto px-6 py-10">
         {cartLoading ? (
           <div className="text-center py-24 space-y-3">
-            <div className="w-8 h-8 border-4 border-[#F16323] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Securing basket items...</p>
           </div>
         ) : cartItems.length === 0 ? (
@@ -418,12 +418,15 @@ export default function CartPage() {
               <h2 className="text-lg font-black text-gray-800">Your basket is empty</h2>
               <p className="text-xs text-gray-400 font-medium">Add books to your cart to explore recommendations.</p>
             </div>
-            <button
-              onClick={() => navigate("/mainwebpage")}
-              className="w-full bg-[#F16323] hover:bg-orange-600 text-white py-3.5 rounded-xl text-xs font-bold transition shadow-md shadow-orange-500/10 cursor-pointer"
-            >
-              Browse Books
-            </button>
+            <motion.button 
+                onClick={() => navigate("/mainwebpage")}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="w-full bg-cta-gradient hover:bg-cta-gradient-hover text-white py-3.5 rounded-xl text-xs font-bold transition shadow-md shadow-gold/15 cursor-pointer"
+              >
+                RETURN TO BOOKSTORE
+              </motion.button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -441,7 +444,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <AnimatePresence mode="pop-layout">
+                  <AnimatePresence mode="popLayout">
                     {cartItems.map((item, idx) => {
                       const book = item.bookId || item;
                       const itemPrice = book.price || 0;
@@ -468,7 +471,7 @@ export default function CartPage() {
                           {/* Info Fields */}
                           <div className="flex-1 flex flex-col justify-between py-0.5">
                             <div className="space-y-1">
-                              <h3 className="text-sm font-black text-gray-900 leading-snug line-clamp-1 hover:text-[#F16323] transition-colors">
+                              <h3 className="text-sm font-black text-ink leading-snug line-clamp-1 hover:text-gold transition-colors font-display">
                                 {book.title}
                               </h3>
                               <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">{book.author}</p>
@@ -518,7 +521,7 @@ export default function CartPage() {
               <div className="bg-white rounded-3xl p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100/60 space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-50 pb-3">
                   <h2 className="text-base font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-[#F16323]" />
+                    <Truck className="w-5 h-5 text-gold" />
                     Delivery Information
                   </h2>
                   <div className="text-right">
@@ -676,7 +679,7 @@ export default function CartPage() {
                           onChange={(e) => handleInputChange("specificAddress", e.target.value, setSpecificAddress)}
                           className={`w-full text-xs font-semibold pl-11 pr-4 py-3.5 border focus:outline-none transition-all duration-300 rounded-2xl bg-gray-50/60 border-transparent focus:bg-white resize-none focus:ring-4 focus:ring-orange-500/10 text-gray-800 ${errors.specificAddress
                               ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/10 bg-red-50/[0.04]"
-                              : "focus:border-[#F16323]"
+                              : "focus:border-gold"
                             }`}
                         />
                       </div>
@@ -699,7 +702,7 @@ export default function CartPage() {
               {/* 1. PROMO VOUCHER (Sleek Inline Apply Button Layout) */}
               <div className="bg-white rounded-3xl p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100/60">
                 <h3 className="text-xs font-black text-gray-800 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                  <Ticket className="w-4 h-4 text-[#F16323]" />
+                  <Ticket className="w-4 h-4 text-gold" />
                   Promo Code / Voucher
                 </h3>
 
@@ -713,7 +716,7 @@ export default function CartPage() {
                   />
                   <button
                     onClick={handleApplyCoupon}
-                    className="absolute right-2 bg-gray-900 text-white font-black text-[10px] px-4.5 py-1.8 rounded-xl hover:bg-[#F16323] transition-colors cursor-pointer"
+                    className="absolute right-2 bg-gray-900 text-white font-black text-[10px] px-4.5 py-1.8 rounded-xl hover:bg-gold transition-colors cursor-pointer"
                   >
                     Apply
                   </button>
@@ -738,7 +741,7 @@ export default function CartPage() {
               {/* 2. PAYMENT SELECTIONS (Taller card list with custom bullets & right-aligned SVGs) */}
               <div className="bg-white rounded-3xl p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100/60">
                 <h3 className="text-xs font-black text-gray-800 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                  <CreditCard className="w-4 h-4 text-[#F16323]" />
+                  <CreditCard className="w-4 h-4 text-gold" />
                   Payment Method
                 </h3>
 
@@ -749,7 +752,7 @@ export default function CartPage() {
                       <label
                         key={option.id}
                         className={`flex items-center justify-between p-4.5 rounded-2xl border cursor-pointer select-none transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] ${isSelected
-                            ? "border-[#F16323] bg-[#F16323]/[0.02] shadow-[0_4px_16px_rgba(241,99,35,0.06)]"
+                            ? "border-gold bg-gold/[0.02] shadow-[0_4px_16px_rgba(201,162,39,0.06)]"
                             : "border-gray-150 bg-white hover:border-gray-350 hover:shadow-2xs text-gray-700"
                           }`}
                       >
@@ -765,10 +768,10 @@ export default function CartPage() {
                           />
 
                           {/* Custom Radio dot */}
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-200 ${isSelected ? "border-[#F16323] bg-white" : "border-gray-300 bg-white"
-                            }`}>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-200 ${isSelected ? "border-gold bg-white" : "border-gray-300 bg-white"}`}
+                          >
                             {isSelected && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#F16323] animate-scale-up" />
+                              <div className="w-2.5 h-2.5 rounded-full bg-gold animate-scale-up" />
                             )}
                           </div>
 
@@ -819,14 +822,17 @@ export default function CartPage() {
                 </div>
 
                 {/* Stars Action Checkout Button */}
-                <button
+                <motion.button
                   onClick={handleCheckoutSubmit}
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-[#F16323] to-[#d9561c] text-white font-black text-sm py-4.5 rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:scale-98 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 group"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  className="w-full bg-cta-gradient hover:bg-cta-gradient-hover text-white font-black text-sm py-4.5 rounded-2xl shadow-lg shadow-gold/25 hover:shadow-gold/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 group"
                 >
                   <span>PROCEED TO CHECKOUT</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1.5" />
-                </button>
+                </motion.button>
               </div>
 
               {/* Security Badge */}

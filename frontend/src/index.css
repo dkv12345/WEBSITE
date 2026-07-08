@@ -1,6 +1,95 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-void: #0B0B1F;
+  --color-parchment: #F7EFE1;
+  --color-gold: #C9A227;
+  --color-ember: #B5651D;
+  --color-nebula: #453576;
+  --color-ink: #211B2E;
+  --color-starlight: #EDE6D6;
+
+  --font-cinzel: "Cinzel", serif;
+  --font-display: "Cormorant Garamond", serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  
+  --animate-float-slow: float-slow 14s ease-in-out infinite;
+  --animate-float-medium: float-medium 8s ease-in-out infinite;
+  --animate-float-fast: float-fast 5s ease-in-out infinite;
+
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(2deg); }
+  }
+  @keyframes float-medium {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(-2deg); }
+  }
+  @keyframes float-fast {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(1.5deg); }
+  }
+}
+
+/* Custom design system utilities */
+.bg-cta-gradient {
+  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-ember) 100%);
+}
+
+.bg-cta-gradient-hover {
+  background: linear-gradient(135deg, var(--color-ember) 0%, var(--color-gold) 100%);
+}
+
+.bg-cosmic-radial {
+  background: radial-gradient(circle at center, var(--color-nebula) 0%, var(--color-void) 100%);
+}
+
+.bg-cosmic-linear {
+  background: linear-gradient(180deg, var(--color-void) 0%, var(--color-nebula) 100%);
+}
+
+.font-cinzel-lbl {
+  font-family: 'Cinzel', serif !important;
+  font-style: normal !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--color-void);
+  color: var(--color-starlight);
+  font-style: normal !important;
+}
+
+/* Custom easings and transitions */
+.transition-custom {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 420ms;
+}
+
+.transition-interactive {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 180ms;
+}
+
+/* Spring-like transition classes */
+.transition-spring {
+  transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* prefers-reduced-motion fallback */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
 }

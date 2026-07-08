@@ -1,50 +1,97 @@
-import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
-export default function InputField({ label, icon: Icon, type, ...props }) {
+/**
+ * Reusable input field for auth forms.
+ *
+ * Fixes vs. previous version:
+ * - Icon no longer overlaps placeholder text: input now has proper
+ *   left padding (pl-11) that matches the icon's absolute position,
+ *   and the icon has pointer-events-none so it never intercepts clicks.
+ * - Password visibility toggle is a real, working button anchored
+ *   inside the input (right-3.5, vertically centered), not floating
+ *   off to the side.
+ * - Fixed height (h-12) keeps every field the same size regardless
+ *   of icon/label combination, so the form never looks "méo".
+ */
+export default function InputField({
+  name,
+  value,
+  onChange,
+  label,
+  type = "text",
+  placeholder,
+  icon: Icon,
+  required = false,
+  error,
+  className = "",
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
-  
-  const inputType = isPassword && showPassword ? "text" : type;
-
-  const RightIcon = showPassword ? Eye : EyeOff;
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
-      {/* Label hiển thị ở trên (nếu có truyền prop label) */}
-      {label && <label className="text-sm font-bold text-gray-700">{label}</label>}
-      
-      <div className="relative w-full">
-        {/* === ICON TRÁI (User, Mail, Lock...) === */}
-        <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-          {Icon && <Icon className="w-5 h-5 text-gray-400" />}
-        </div>
+    <div className="w-full">
+      {label && (
+        <label
+          htmlFor={name}
+          className="block text-sm font-bold text-ink/80 mb-1.5 font-sans"
+        >
+          {label}
+        </label>
+      )}
 
-        {/* === Ô NHẬP LIỆU (INPUT) === */}
+      <div className="relative">
+        {Icon && (
+          <Icon
+            className="w-4 h-4 text-ink/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            strokeWidth={2}
+          />
+        )}
+
         <input
+          id={name}
+          name={name}
           type={inputType}
-          // pl-11: chừa chỗ cho icon trái
-          // pr-12: chừa chỗ lớn cho icon phải (chống đè icon mặc định của trình duyệt)
-          // focus:border-[#F16323]: Đổi viền sang màu cam đặc trưng khi click
-          className="w-full pl-11 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-[10px] focus:outline-none focus:border-[#F16323] focus:ring-1 focus:ring-[#F16323] transition-all text-sm font-medium"
-          
-          // Tắt tự động điền mật khẩu mặc định (ngăn trình duyệt chèn icon chìa khóa)
-          autoComplete={isPassword ? "new-password" : props.autoComplete}
-          {...props}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          autoComplete={isPassword ? "current-password" : name}
+          className={[
+            "w-full h-12 rounded-xl border bg-white/60 text-ink text-sm font-medium",
+            "placeholder:text-ink/35 placeholder:font-normal",
+            "outline-none transition-all duration-200",
+            "focus:ring-2 focus:ring-offset-0",
+            Icon ? "pl-11" : "pl-4",
+            isPassword ? "pr-11" : "pr-4",
+            error
+              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+              : "border-ink/10 focus:border-gold focus:ring-gold/20",
+            className,
+          ].join(" ")}
         />
 
-        {/* === ICON PHẢI (CHUYỂN ĐỔI ẨN/HIỆN MẬT KHẨU) === */}
         {isPassword && (
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            tabIndex="-1" // Không focus vào nút này khi bấm phím Tab
-            className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+            onClick={() => setShowPassword((s) => !s)}
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink/70 transition-colors"
           >
-            <RightIcon className="w-5 h-5" />
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" strokeWidth={2} />
+            ) : (
+              <Eye className="w-4 h-4" strokeWidth={2} />
+            )}
           </button>
         )}
       </div>
+
+      {error && (
+        <p className="mt-1.5 text-xs text-red-500 font-medium">{error}</p>
+      )}
     </div>
   );
 }

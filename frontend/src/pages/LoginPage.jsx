@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, BookOpen, ArrowLeft, ArrowRight, Loader, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
 import InputField from "../components/auth/InputField";
 import SocialButton from "../components/auth/SocialButton";
 import axios from "axios";
@@ -73,50 +74,35 @@ export default function LoginPage() {
       }}
     >
       {/* Dark warm ambient overlay behind the doors */}
-      <div className="absolute inset-0 bg-[#0c0a10]/50 backdrop-blur-xs z-0 pointer-events-none" />
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+      <div className="absolute inset-0 bg-void/50 backdrop-blur-xs z-0 pointer-events-none" />
+      
+      {/* Ambient floating star particles */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute w-2 h-2 rounded-full bg-gold/40 top-[15%] left-[25%] animate-float-slow" style={{ animationDelay: "0s" }} />
+        <div className="absolute w-1 h-1 rounded-full bg-white/50 top-[35%] left-[75%] animate-float-medium" style={{ animationDelay: "2s" }} />
+        <div className="absolute w-2.5 h-2.5 rounded-full bg-nebula/30 top-[65%] left-[15%] animate-float-slow" style={{ animationDelay: "4s" }} />
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-gold/30 top-[80%] left-[80%] animate-float-medium" style={{ animationDelay: "1s" }} />
+        <div className="absolute w-2 h-2 rounded-full bg-indigo-300/30 top-[45%] left-[40%] animate-float-slow" style={{ animationDelay: "3s" }} />
+      </div>
 
-        .font-display {
-          font-family: 'Cormorant Garamond', serif;
-          font-style: normal;
-        }
-        .font-mono-lbl {
-          font-family: 'IBM Plex Mono', monospace;
-        }
-        .font-sans-pref {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+      <div className="relative z-10 w-full max-w-[1100px] bg-parchment/95 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] transition-all duration-1000 shadow-2xl border border-gold/15">
 
-        /* Enforce fonts and no italics rules */
-        body, input, span, p, div, button {
-          font-family: 'Plus Jakarta Sans', sans-serif !important;
-          font-style: normal !important;
-        }
-        h1, h2, h3, h4, .font-display {
-          font-family: 'Cormorant Garamond', serif !important;
-          font-style: normal !important;
-        }
-      `}} />
-
-      <div className="relative z-10 w-full max-w-[1100px] bg-[#FAF8F5]/90 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] transition-all duration-1000 shadow-2xl border border-white/20">
-
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative">
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative text-ink">
           <button
             onClick={() => navigate(-1)}
-            className="absolute top-8 left-8 p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"
+            className="absolute top-8 left-8 p-2.5 bg-white/60 hover:bg-white text-ink/80 rounded-full transition-colors border border-ink/5"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-ink" />
           </button>
 
           <div className="mt-10 mb-8 flex items-center gap-2.5">
-            <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
-            <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
+            <BookOpen className="w-7 h-7 text-gold" strokeWidth={2.5} />
+            <span className="text-xl font-extrabold text-ink tracking-tight font-sans">BookHaven</span>
           </div>
 
           <div className="mb-8">
-            <h1 className="text-[32px] leading-tight font-extrabold text-gray-900 mb-2 tracking-tight">Welcome back</h1>
-            <p className="text-gray-500 text-[15px]">Enter your details to access your personal library.</p>
+            <h1 className="text-[32px] leading-tight font-extrabold text-ink mb-2 tracking-tight font-display">Welcome back</h1>
+            <p className="text-ink/65 text-[15px]">Enter your details to access your personal library.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-[400px]">
@@ -128,6 +114,7 @@ export default function LoginPage() {
               type="email"
               placeholder="Enter your email"
               icon={Mail}
+              className="bg-white/50 border-ink/10 focus:border-gold focus:ring-gold text-ink"
             />
 
             <InputField
@@ -138,11 +125,12 @@ export default function LoginPage() {
               type="password"
               placeholder="Enter your password"
               icon={Lock}
+              className="bg-white/50 border-ink/10 focus:border-gold focus:ring-gold text-ink"
             />
 
             {/* Error message */}
             {error && (
-              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+              <div className="flex items-center gap-2.5 bg-red-50/80 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -154,35 +142,38 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-[#D49B00] focus:ring-[#D49B00]"
+                  className="w-4 h-4 rounded border-ink/20 text-gold focus:ring-gold bg-white/50"
                 />
-                <span className="text-sm text-gray-600 font-medium group-hover:text-gray-900 transition-colors">Remember me</span>
+                <span className="text-sm text-ink/70 font-medium group-hover:text-ink transition-colors">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm font-bold text-[#D49B00] hover:text-[#b88600] transition-colors">
+              <Link to="/forgot-password" className="text-sm font-bold text-gold hover:text-ember transition-colors">
                 Forgot Password?
               </Link>
             </div>
 
-            <button
+            <motion.button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-[#D49B00] hover:bg-[#b88600] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-2 disabled:opacity-70 flex items-center justify-center"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="w-full py-3 px-4 bg-cta-gradient hover:bg-cta-gradient-hover text-white font-bold rounded-[10px] transition-all mt-2 disabled:opacity-70 flex items-center justify-center shadow-md shadow-gold/15"
             >
               {isLoading ? (
                 <Loader className="w-5 h-5 animate-spin" />
               ) : (
                 "Login"
               )}
-            </button>
+            </motion.button>
           </form>
 
           <div className="mt-8 max-w-[400px]">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
+                <div className="w-full border-t border-ink/10"></div>
               </div>
               <div className="relative flex justify-center text-[11px] uppercase font-bold tracking-widest">
-                <span className="bg-[#FAF8F5] px-4 text-gray-400">Or continue with</span>
+                <span className="bg-parchment px-4 text-ink/40">Or continue with</span>
               </div>
             </div>
 
@@ -193,9 +184,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <p className="text-left text-sm text-gray-600 mt-8 font-medium">
+          <p className="text-left text-sm text-ink/75 mt-8 font-medium">
             Don't have an account?{' '}
-            <Link to="/signup" className="font-bold text-[#D49B00] hover:text-[#b88600]">
+            <Link to="/signup" className="font-bold text-gold hover:text-ember transition-colors">
               Sign up
             </Link>
           </p>
@@ -204,14 +195,14 @@ export default function LoginPage() {
         <div className="hidden md:block w-1/2 p-2.5">
           <div className="relative w-full h-full rounded-2xl overflow-hidden">
             <img src="/bookshelf.jpg" alt="Library Bookshelf" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/30 to-transparent"></div>
             <div className="absolute bottom-6 left-6 right-6">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl">
                 <div className="flex gap-2 mb-4">
                   <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Community of readers</span>
                   <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Vast resources</span>
                 </div>
-                <p className="text-white text-[17px] font-semibold leading-relaxed mb-6">
+                <p className="text-white text-[17px] font-semibold leading-relaxed mb-6 font-display">
                   "I was able to find rare editions and connect with fellow book lovers, elevating my reading experience by 100% using this platform."
                 </p>
                 <div className="flex items-center justify-between">
@@ -223,7 +214,7 @@ export default function LoginPage() {
                     <button className="p-2 rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors">
                       <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
                     </button>
-                    <button className="p-2 rounded-full bg-white text-gray-900 hover:bg-gray-100 transition-colors">
+                    <button className="p-2 rounded-full bg-white text-void hover:bg-gray-100 transition-colors">
                       <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
                     </button>
                   </div>
@@ -233,14 +224,15 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      
       {/* Immersive Thank-You Letter Overlay */}
       <div className={`fixed inset-0 z-40 flex items-center justify-center p-4 transition-all duration-700 ${
         showLetter ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
       }`}>
-        <div className="absolute inset-0 bg-[#0c0a10]/75 backdrop-blur-md" />
+        <div className="absolute inset-0 bg-void/85 backdrop-blur-md" />
         
         <div 
-          className="relative w-full max-w-[550px] aspect-[4/5] md:aspect-[3/4] rounded-2xl shadow-2xl p-8 md:p-12 flex flex-col justify-between border border-[#D49B00]/30 transition-transform duration-700 overflow-hidden"
+          className="relative w-full max-w-[550px] aspect-[4/5] md:aspect-[3/4] rounded-2xl shadow-2xl p-8 md:p-12 flex flex-col justify-between border border-gold/30 transition-transform duration-700 overflow-hidden"
           style={{
             backgroundImage: "url('/letter.jpg')",
             backgroundSize: "cover",
@@ -252,7 +244,7 @@ export default function LoginPage() {
           
           <div className="space-y-6 relative z-10 text-[#2b1d0f]/90">
             <div className="flex items-center gap-2 border-b border-[#2b1d0f]/15 pb-4">
-              <BookOpen className="w-6 h-6 text-[#D49B00]" strokeWidth={2.5} />
+              <BookOpen className="w-6 h-6 text-gold" strokeWidth={2.5} />
               <span className="font-display font-bold text-lg tracking-tight uppercase text-[#2b1d0f]">BookHaven Curator</span>
             </div>
 
@@ -268,16 +260,19 @@ export default function LoginPage() {
           </div>
 
           <div className="relative z-10 flex justify-center pt-4">
-            <button
+            <motion.button
               onClick={handleEnterStage}
               disabled={!typingCompleted}
-              className={`px-8 py-3 bg-[#2b1d0f] hover:bg-[#1f140a] text-[#FAF8F5] font-mono-lbl text-[10px] uppercase tracking-widest flex items-center gap-3 rounded-xl transition-all shadow-xl active:scale-95 group ${
+              whileHover={typingCompleted ? { scale: 1.02 } : {}}
+              whileTap={typingCompleted ? { scale: 0.96 } : {}}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className={`px-8 py-3 bg-[#2b1d0f] hover:bg-[#1f140a] text-[#FAF8F5] font-mono-lbl text-[10px] uppercase tracking-widest flex items-center gap-3 rounded-xl transition-all shadow-xl group ${
                 typingCompleted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
               } duration-500`}
             >
               <img src="/glowing_key.png" alt="Key" className="w-5 h-5 animate-pulse group-hover:rotate-12 transition-transform" />
               <span>Open Stage</span>
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -46,19 +47,27 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F16323] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl">
-        <button onClick={() => navigate(-1)} className="mb-6 flex items-center text-gray-500 hover:text-gray-900 transition-colors">
+    <div className="min-h-screen bg-cosmic-linear flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-gold/40 top-[15%] left-[20%] animate-float-slow" />
+        <div className="absolute w-1 h-1 rounded-full bg-white/40 top-[40%] left-[75%] animate-float-medium" />
+        <div className="absolute w-2 h-2 rounded-full bg-nebula/30 top-[70%] left-[30%] animate-float-slow" />
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-gold/30 top-[85%] left-[80%] animate-float-medium" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md bg-parchment rounded-3xl p-8 shadow-2xl border border-gold/10">
+        <button onClick={() => navigate(-1)} className="mb-6 flex items-center text-ink/60 hover:text-ink transition-colors font-medium">
           <ArrowLeft className="w-5 h-5 mr-1" /> Back
         </button>
 
         <div className="flex items-center gap-2 mb-6">
-          <BookOpen className="w-7 h-7 text-[#F16323]" />
-          <span className="text-xl font-extrabold text-gray-900">BookHaven</span>
+          <BookOpen className="w-7 h-7 text-gold" strokeWidth={2.5} />
+          <span className="text-xl font-extrabold text-ink tracking-tight font-sans">BookHaven</span>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify your email</h2>
-        <p className="text-gray-500 mb-6">Enter the 6-digit code sent to your email address.</p>
+        <h2 className="text-2xl font-display font-bold text-ink mb-2">Verify your email</h2>
+        <p className="text-ink/70 mb-6 text-sm">Enter the 6-digit code sent to your email address.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex justify-between">
@@ -71,14 +80,20 @@ export default function VerifyEmailPage() {
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:border-[#F16323] focus:outline-none transition-all"
+                className="w-12 h-14 text-center text-2xl font-bold border-2 border-ink/10 rounded-xl focus:border-gold focus:outline-none transition-all bg-white/50 text-ink"
               />
             ))}
           </div>
 
-          <button type="submit" className="w-full py-3 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-xl transition-all">
+          <motion.button 
+            type="submit" 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="w-full py-3 bg-cta-gradient hover:bg-cta-gradient-hover text-white font-bold rounded-xl transition-all shadow-md shadow-gold/20"
+          >
             Verify Email
-          </button>
+          </motion.button>
         </form>
       </div>
     </div>

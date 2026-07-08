@@ -132,13 +132,13 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F5] text-gray-900 font-sans flex flex-col justify-center items-center py-10 px-4">
+    <div className="min-h-screen bg-parchment text-ink font-sans flex flex-col justify-center items-center py-10 px-4">
       
       {/* Cancel button */}
       {step === "form" && (
         <button 
           onClick={() => navigate("/cart")}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-[#F16323] transition-colors cursor-pointer"
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gold transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Cancel & Back to Cart</span>
@@ -176,8 +176,8 @@ export default function CheckoutPage() {
                     <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center text-[9px]"><Check className="w-2.5 h-2.5" /></div>
                     <span>Shipping details</span>
                   </div>
-                  <div className="flex items-center gap-1 text-[#F16323] border-b-2 border-[#F16323] pb-1">
-                    <div className="w-4 h-4 rounded-full bg-orange-100 flex items-center justify-center text-[9px] text-[#F16323]">3</div>
+                  <div className="flex items-center gap-1 text-gold border-b-2 border-gold pb-1 font-cinzel-lbl">
+                    <div className="w-4 h-4 rounded-full bg-gold/10 flex items-center justify-center text-[9px] text-gold">3</div>
                     <span>Payment method</span>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export default function CheckoutPage() {
                           </div>
                           <div className="flex justify-between items-baseline text-[8px] text-gray-400 tracking-wider">
                             <span>PCI-DSS Secured</span>
-                            <span className="text-[#F16323] font-bold">Secure Gate v2.0</span>
+                            <span className="text-gold font-bold">Secure Gate v2.0</span>
                           </div>
                         </div>
                       </motion.div>
@@ -277,7 +277,7 @@ export default function CheckoutPage() {
                             placeholder="e.g. CODEXR"
                             value={cardName}
                             onChange={(e) => setCardName(e.target.value)}
-                            className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:border-[#F16323] bg-gray-50/20 text-gray-800"
+                            className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:border-gold bg-gray-50/20 text-gray-800"
                           />
                         </div>
                       </div>
@@ -291,58 +291,68 @@ export default function CheckoutPage() {
                             placeholder="e.g. 4535 3453 4534 5435"
                             value={cardNumber}
                             onChange={handleCardNumberChange}
-                            className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-12 focus:outline-none focus:border-[#F16323] bg-gray-50/20 font-mono tracking-wider text-gray-800"
+                            className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-12 focus:outline-none focus:border-gold bg-gray-50/20 font-mono tracking-wider text-gray-800"
                           />
                           <span className="absolute right-3 font-bold italic text-blue-600 text-[10px]">
                             {statePaymentMethod === "paypal" ? "PayPal" : "VISA"}
                           </span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-gray-500">EXPIRY DATE</label>
-                          <div className="relative flex items-center">
-                            <Calendar className="w-4 h-4 absolute left-3 text-gray-400" />
-                            <input 
-                              type="text" 
-                              placeholder="12/28"
-                              value={cardExpiry}
-                              onChange={handleExpiryChange}
-                              className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:border-[#F16323] bg-gray-50/20 font-mono text-gray-800"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-gray-500">CVV / CVC</label>
-                          <div className="relative flex items-center">
-                            <Lock className="w-4 h-4 absolute left-3 text-gray-400" />
-                            <input 
-                              type="text" 
-                              placeholder="•••"
-                              value={cardCvv}
-                              onChange={handleCvvChange}
-                              onFocus={() => setIsFlipped(true)}
-                              onBlur={() => setIsFlipped(false)}
-                              className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:border-[#F16323] bg-gray-50/20 font-mono text-gray-800"
-                            />
-                          </div>
+                    <div className="flex gap-4">
+                      <div className="space-y-1.5 flex-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Expiry</label>
+                        <div className="relative">
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-450 z-10"><Calendar className="w-4 h-4" /></div>
+                          <input
+                            type="text"
+                            name="expiry"
+                            placeholder="MM/YY"
+                            value={cardExpiry}
+                            onChange={handleExpiryChange}
+                            maxLength="5"
+                            required
+                            className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:border-gold bg-gray-50/20 font-mono text-gray-800"
+                          />
                         </div>
                       </div>
 
-                      <div className="bg-gray-50 border border-gray-200/50 rounded-2xl p-4 flex items-center justify-between mt-4">
-                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">Payment amount:</span>
-                        <span className="text-xl font-black text-[#F16323]">${stateTotal.toFixed(2)}</span>
+                      <div className="space-y-1.5 flex-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CVC</label>
+                        <div className="relative">
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-450 z-10"><Lock className="w-4 h-4" /></div>
+                          <input
+                            type="text"
+                            name="cvc"
+                            placeholder="123"
+                            value={cardCvv}
+                            onChange={handleCvvChange}
+                            onFocus={() => setIsFlipped(true)}
+                            onBlur={() => setIsFlipped(false)}
+                            maxLength="4"
+                            required
+                            className="w-full border border-gray-200/80 rounded-xl py-3 pl-10 pr-3 focus:outline-none focus:border-gold bg-gray-50/20 font-mono text-gray-800"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <button 
-                      type="submit"
-                      className="w-full bg-[#F16323] hover:bg-orange-600 text-white font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-orange-500/10 cursor-pointer active:scale-98 flex items-center justify-center gap-2 mt-4"
-                    >
+                      <div className="bg-gray-50 border border-gray-200/50 rounded-2xl p-4 flex items-center justify-between mt-4">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">Payment amount:</span>
+                        <span className="text-xl font-black text-gold">${stateTotal.toFixed(2)}</span>
+                      </div>
+
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.96 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        className="w-full bg-cta-gradient hover:bg-cta-gradient-hover text-white font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-gold/10 cursor-pointer flex items-center justify-center gap-2 mt-4"
+                      >
                       <span>PAY ${stateTotal.toFixed(2)} NOW</span>
                       <ArrowRight className="w-4 h-4" />
-                    </button>
+                    </motion.button>
                   </form>
                 </div>
               )}
@@ -361,7 +371,7 @@ export default function CheckoutPage() {
                       <motion.div 
                         animate={{ top: ["0%", "100%", "0%"] }}
                         transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
-                        className="absolute left-0 right-0 h-0.5 bg-[#F16323] shadow-[0_0_8px_#F16323] z-20 pointer-events-none"
+                        className="absolute left-0 right-0 h-0.5 bg-gold shadow-[0_0_8px_var(--color-gold)] z-20 pointer-events-none"
                       />
 
                       {/* Icon representing standard QR */}
@@ -377,7 +387,7 @@ export default function CheckoutPage() {
                   <div className="space-y-5">
                     <div className="space-y-1">
                       <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
-                        <Landmark className="w-5 h-5 text-[#F16323]" />
+                        <Landmark className="w-5 h-5 text-gold" />
                         Bank Transfer
                       </h2>
                       <p className="text-xs text-gray-400">Transfer exactly the invoice total below to verify.</p>
@@ -404,7 +414,7 @@ export default function CheckoutPage() {
                           <span className="font-black text-gray-900 font-mono">1903 4567 8910</span>
                           <button 
                             onClick={() => handleCopyText("190345678910", "acct")}
-                            className="text-gray-400 hover:text-[#F16323] cursor-pointer"
+                            className="text-gray-400 hover:text-gold cursor-pointer"
                             title="Copy Account Number"
                           >
                             {copiedField === "acct" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -419,7 +429,7 @@ export default function CheckoutPage() {
                           <span className="font-black text-emerald-600 font-mono uppercase tracking-wider">{refCode}</span>
                           <button 
                             onClick={() => handleCopyText(refCode, "ref")}
-                            className="text-gray-400 hover:text-[#F16323] cursor-pointer"
+                            className="text-gray-400 hover:text-gold cursor-pointer"
                             title="Copy Memo"
                           >
                             {copiedField === "ref" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -431,10 +441,10 @@ export default function CheckoutPage() {
                       <div className="bg-gray-50 border border-gray-150 rounded-2xl p-4 flex items-center justify-between mt-2">
                         <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Total Amount:</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-xl font-black text-[#F16323]">${stateTotal.toFixed(2)}</span>
+                          <span className="text-xl font-black text-gold">${stateTotal.toFixed(2)}</span>
                           <button 
                             onClick={() => handleCopyText(stateTotal.toFixed(2), "amt")}
-                            className="text-gray-400 hover:text-[#F16323] cursor-pointer"
+                            className="text-gray-400 hover:text-gold cursor-pointer"
                             title="Copy Amount"
                           >
                             {copiedField === "amt" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -484,7 +494,7 @@ export default function CheckoutPage() {
 
                       {/* Step 2 */}
                       <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-orange-100 text-[#F16323] flex items-center justify-center shrink-0 mt-0.5 animate-pulse">
+                        <div className="w-5 h-5 rounded-full bg-gold/10 text-gold flex items-center justify-center shrink-0 mt-0.5 animate-pulse">
                           <Truck className="w-3 h-3" />
                         </div>
                         <div>
@@ -511,7 +521,7 @@ export default function CheckoutPage() {
                   <div className="space-y-5">
                     <div className="space-y-1">
                       <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
-                        <Truck className="w-5 h-5 text-[#F16323]" />
+                        <Truck className="w-5 h-5 text-gold" />
                         Cash on Delivery
                       </h2>
                       <p className="text-xs text-gray-400">Confirm delivery address details below.</p>
@@ -581,7 +591,7 @@ export default function CheckoutPage() {
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="w-20 h-20 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F16323] shadow-[0_20px_50px_rgba(241,99,35,0.25)]"
+                className="w-20 h-20 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center text-gold shadow-[0_20px_50px_rgba(201,162,39,0.15)]"
               >
                 <Lock className="w-8 h-8 animate-pulse" />
               </motion.div>
@@ -614,16 +624,19 @@ export default function CheckoutPage() {
                   <div><span className="font-bold text-gray-400 inline-block w-28">Order Reference:</span> <span className="font-mono text-gray-800 font-bold uppercase">{refCode}</span></div>
                   <div><span className="font-bold text-gray-400 inline-block w-28">Estimated Delivery:</span> <span className="text-emerald-600 font-bold">{stateShipping?.estimatedDelivery || "3-5 days"}</span></div>
                   <div><span className="font-bold text-gray-400 inline-block w-28">Payment Mode:</span> <span className="text-gray-800 font-bold uppercase">{statePaymentMethod}</span></div>
-                  <div><span className="font-bold text-gray-400 inline-block w-28">Amount Paid:</span> <span className="text-[#F16323] font-black">${stateTotal.toFixed(2)}</span></div>
+                  <div><span className="font-bold text-gray-400 inline-block w-28 font-cinzel-lbl text-[10px]">Amount Paid:</span> <span className="text-gold font-black font-mono">${stateTotal.toFixed(2)}</span></div>
                 </div>
               </div>
 
-              <button 
+              <motion.button
                 onClick={() => navigate("/mainwebpage")}
-                className="w-full bg-[#F16323] hover:bg-orange-600 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md cursor-pointer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="w-full bg-cta-gradient hover:bg-cta-gradient-hover text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md cursor-pointer"
               >
                 Go to Homepage
-              </button>
+              </motion.button>
             </motion.div>
           )}
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, User, BookOpen, ArrowLeft, Loader, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
 import InputField from "../components/auth/InputField";
 import SocialButton from "../components/auth/SocialButton";
 import axios from "axios";
@@ -28,11 +29,11 @@ export default function SignUpPage() {
   const strength = calculateStrength(form.password);
 
   const getStrengthConfig = (s) => {
-    if (s === 0) return { text: "Too Short", color: "text-gray-400", bg: "bg-gray-200" };
+    if (s === 0) return { text: "Too Short", color: "text-ink/40", bg: "bg-ink/10" };
     if (s === 1) return { text: "Weak", color: "text-red-500", bg: "bg-red-500" };
-    if (s === 2) return { text: "Fair", color: "text-orange-500", bg: "bg-orange-500" };
-    if (s === 3) return { text: "Good", color: "text-yellow-500", bg: "bg-yellow-500" };
-    return { text: "Strong", color: "text-green-500", bg: "bg-green-500" };
+    if (s === 2) return { text: "Fair", color: "text-amber-500", bg: "bg-amber-500" };
+    if (s === 3) return { text: "Good", color: "text-yellow-600", bg: "bg-yellow-600" };
+    return { text: "Strong", color: "text-green-600", bg: "bg-green-600" };
   };
 
   const strengthConfig = getStrengthConfig(strength);
@@ -60,93 +61,82 @@ export default function SignUpPage() {
         backgroundPosition: "center"
       }}
     >
-      <div className="absolute inset-0 bg-[#0c0a10]/50 backdrop-blur-xs z-0 pointer-events-none" />
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+      {/* Dark warm ambient overlay behind the doors */}
+      <div className="absolute inset-0 bg-void/50 backdrop-blur-xs z-0 pointer-events-none" />
+      
+      {/* Ambient floating star particles */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute w-2 h-2 rounded-full bg-gold/40 top-[15%] left-[25%] animate-float-slow" style={{ animationDelay: "0s" }} />
+        <div className="absolute w-1 h-1 rounded-full bg-white/50 top-[35%] left-[75%] animate-float-medium" style={{ animationDelay: "2s" }} />
+        <div className="absolute w-2.5 h-2.5 rounded-full bg-nebula/30 top-[65%] left-[15%] animate-float-slow" style={{ animationDelay: "4s" }} />
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-gold/30 top-[80%] left-[80%] animate-float-medium" style={{ animationDelay: "1s" }} />
+        <div className="absolute w-2 h-2 rounded-full bg-indigo-300/30 top-[45%] left-[40%] animate-float-slow" style={{ animationDelay: "3s" }} />
+      </div>
 
-        .font-display {
-          font-family: 'Cormorant Garamond', serif;
-          font-style: normal;
-        }
-        .font-mono-lbl {
-          font-family: 'IBM Plex Mono', monospace;
-        }
-        .font-sans-pref {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+      <div className="relative z-10 w-full max-w-[1100px] bg-parchment/95 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] border border-gold/15 shadow-2xl">
 
-        /* Enforce fonts and no italics rules */
-        body, input, span, p, div, button {
-          font-family: 'Plus Jakarta Sans', sans-serif !important;
-          font-style: normal !important;
-        }
-        h1, h2, h3, h4, .font-display {
-          font-family: 'Cormorant Garamond', serif !important;
-          font-style: normal !important;
-        }
-      `}} />
-
-      <div className="relative z-10 w-full max-w-[1100px] bg-[#FAF8F5]/90 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] border border-white/20 shadow-2xl">
-
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative justify-center">
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative justify-center text-ink">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="absolute top-8 left-8 p-2.5 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"
+            className="absolute top-8 left-8 p-2.5 bg-white/60 hover:bg-white text-ink/80 rounded-full transition-colors border border-ink/5"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-ink" />
           </button>
 
           <div className="w-full max-w-[450px] mx-auto flex flex-col flex-1 justify-center">
             <div className="mb-5 flex items-center gap-2.5">
-              <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
-              <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
+              <BookOpen className="w-7 h-7 text-gold" strokeWidth={2.5} />
+              <span className="text-xl font-extrabold text-ink tracking-tight font-sans">BookHaven</span>
             </div>
 
             <div className="mb-5">
-              <h1 className="text-[32px] leading-tight font-extrabold text-gray-900 mb-1 tracking-tight">Create account</h1>
-              <p className="text-gray-500 text-[15px]">Join our community of readers today.</p>
+              <h1 className="text-[32px] leading-tight font-extrabold text-ink mb-1 tracking-tight font-display">Create account</h1>
+              <p className="text-ink/65 text-[15px]">Join our community of readers today.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 w-full">
-              <InputField name="name" value={form.name} onChange={handleChange("name")} label="Full Name" type="text" placeholder="Enter your full name" icon={User} required />
-              <InputField name="email" value={form.email} onChange={handleChange("email")} label="Email" type="email" placeholder="Enter your email" icon={Mail} required />
-              <InputField name="password" value={form.password} onChange={handleChange("password")} label="Password" type="password" placeholder="Create a password" icon={Lock} required />
+              <InputField name="name" value={form.name} onChange={handleChange("name")} label="Full Name" type="text" placeholder="Enter your full name" icon={User} required className="bg-white/50 border-ink/10 focus:border-gold focus:ring-gold text-ink" />
+              <InputField name="email" value={form.email} onChange={handleChange("email")} label="Email" type="email" placeholder="Enter your email" icon={Mail} required className="bg-white/50 border-ink/10 focus:border-gold focus:ring-gold text-ink" />
+              <InputField name="password" value={form.password} onChange={handleChange("password")} label="Password" type="password" placeholder="Create a password" icon={Lock} required className="bg-white/50 border-ink/10 focus:border-gold focus:ring-gold text-ink" />
 
               {/* Password strength */}
               <div className="flex items-center gap-3 w-full">
                 <div className="flex-1 flex gap-1.5">
                   {[0, 1, 2, 3].map((index) => (
-                    <div key={index} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${form.password && index < strength ? strengthConfig.bg : "bg-gray-200"}`} />
+                    <div key={index} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${form.password && index < strength ? strengthConfig.bg : "bg-ink/10"}`} />
                   ))}
                 </div>
-                <span className={`text-xs font-bold tracking-wide min-w-[60px] text-right transition-colors duration-300 ${form.password ? strengthConfig.color : "text-gray-400"}`}>
+                <span className={`text-xs font-bold tracking-wide min-w-[60px] text-right transition-colors duration-300 ${form.password ? strengthConfig.color : "text-ink/40"}`}>
                   {form.password ? strengthConfig.text : "Empty"}
                 </span>
               </div>
 
               {/* Error message */}
               {error && (
-                <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+                <div className="flex items-center gap-2.5 bg-red-50/80 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              <button
+              <motion.button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 bg-[#D49B00] hover:bg-[#b88600] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-70"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="w-full py-3 px-4 bg-cta-gradient hover:bg-cta-gradient-hover text-white font-bold rounded-[10px] transition-all flex items-center justify-center disabled:opacity-70 shadow-md shadow-gold/15"
               >
                 {isLoading ? <Loader className="w-5 h-5 animate-spin" /> : "Sign Up"}
-              </button>
+              </motion.button>
             </form>
 
             <div className="mt-6 w-full">
               <div className="relative">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-ink/10"></div></div>
                 <div className="relative flex justify-center text-[11px] uppercase font-bold tracking-widest">
-                  <span className="bg-transparent px-4 text-gray-400">Or register with</span>
+                  <span className="bg-parchment px-4 text-ink/40">Or register with</span>
                 </div>
               </div>
               <div className="mt-4 flex gap-3">
@@ -156,9 +146,9 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            <p className="text-left text-sm text-gray-600 mt-6 font-medium">
+            <p className="text-left text-sm text-ink/75 mt-6 font-medium">
               Already have an account?{' '}
-              <Link to="/login" className="font-bold text-[#D49B00] hover:text-[#b88600]">Log in</Link>
+              <Link to="/login" className="font-bold text-gold hover:text-ember transition-colors">Log in</Link>
             </p>
           </div>
         </div>
@@ -166,14 +156,14 @@ export default function SignUpPage() {
         <div className="hidden md:block w-1/2 p-2.5">
           <div className="relative w-full h-full rounded-2xl overflow-hidden">
             <img src="/bookshelf.jpg" alt="Library Bookshelf" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/30 to-transparent"></div>
             <div className="absolute bottom-6 left-6 right-6">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl">
                 <div className="flex gap-2 mb-4">
                   <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Join BookHaven</span>
                   <span className="px-3 py-1 bg-white/20 rounded-full text-[11px] font-bold tracking-wide text-white border border-white/10">Explore</span>
                 </div>
-                <p className="text-white text-[17px] font-semibold leading-relaxed mb-6">
+                <p className="text-white text-[17px] font-semibold leading-relaxed mb-6 font-display">
                   "Creating an account unlocked a whole new world of literature for me. The semantic search feature is a game-changer!"
                 </p>
                 <div>

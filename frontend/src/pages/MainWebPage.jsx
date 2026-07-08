@@ -5,6 +5,7 @@ import {
   ChevronLeft, ArrowRight, ShieldCheck, Mail, Phone, MapPin, Check, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import BookDetailPage from "./BookDetailPage"; // Import component BookDetailPage
 
 // Mock data cho thanh tìm kiếm thông minh
@@ -17,25 +18,25 @@ const heroSlides = [
     title: "Find Your Next Favorite Book",
     subtitle: "Welcome Back !",
     desc: "Explore thousands of titles across every genre. From thrilling fiction to life-changing business insights. Owned by readers, curated by experts.",
-    bg: "from-[#1e1b4b] via-[#2e1065] to-[#f16323]", // Thêm dải màu huyền bí huyền ảo pha cam rực rỡ
+    bg: "from-void via-nebula to-[#6B5A1A]", // Thêm dải màu huyền bí huyền ảo pha cam rực rỡ
     badge: "New Release",
-    badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30"
+    badgeBg: "bg-gold/15 text-gold border-gold/20"
   },
   {
     title: "Upgrade Your Skillset Today",
     subtitle: "Special Promotion",
     desc: "Get up to 30% off on all Business, Finance & Self-Help books during this exclusive summer collection. Knowledge is your best investment.",
-    bg: "from-[#0f172a] via-[#7c2d12] to-[#b45309]", // Gradient hổ phách đậm chất tri thức sang trọng
+    bg: "from-void via-[#2E1F47] to-[#B5651D]", // Gradient hổ phách đậm chất tri thức sang trọng
     badge: "Flash Sale",
-    badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30"
+    badgeBg: "bg-gold/15 text-gold border-gold/20"
   },
   {
     title: "Expand Your Knowledge Base",
     subtitle: "Editor's Choice",
     desc: "Dive deep into our handpicked masterpieces and best-selling non-fiction titles that are trending worldwide. Discover the untold stories.",
-    bg: "from-[#172554] via-[#1e1b4b] to-[#c2410c]", // Deep Blue pha trộn rực lửa đầy chiều sâu
+    bg: "from-void via-nebula to-[#B5651D]", // Deep Blue pha trộn rực lửa đầy chiều sâu
     badge: "Trending Now",
-    badgeBg: "bg-blue-500/20 text-blue-300 border-blue-500/30"
+    badgeBg: "bg-gold/15 text-gold border-gold/20"
   }
 ];
 
@@ -474,7 +475,8 @@ export default function MainWebPage() {
           onClick={() => handleBookClick(book, index + 1)}
           className="w-full aspect-[3/4] bg-gray-50 rounded-none overflow-hidden relative cursor-pointer mb-4 select-none"
         >
-          <img 
+          <motion.img 
+            layoutId={`book-cover-${book._id}`}
             src={book.images?.medium || book.images?.large || "https://placehold.co/300x400?text=No+Cover"} 
             alt={book.title}
             onError={() => {
@@ -492,14 +494,14 @@ export default function MainWebPage() {
         {/* Centered text fields */}
         <div className="flex-grow flex flex-col text-center space-y-1.5 px-1">
           <div>
-            <span className="text-[10px] font-bold text-[#D49B00] bg-amber-50/70 border border-amber-100/60 px-2 py-0.5 rounded-none uppercase tracking-wider">
+            <span className="text-[10px] font-cinzel-lbl text-gold bg-gold/5 border border-gold/20 px-2 py-0.5 rounded-none uppercase tracking-wider">
               {primaryGenre}
             </span>
           </div>
           
           <h3 
             onClick={() => handleBookClick(book, index + 1)}
-            className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-[#D49B00] cursor-pointer transition-colors pt-1 min-h-[40px] leading-snug"
+            className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-gold cursor-pointer transition-colors pt-1 min-h-[40px] leading-snug font-display"
           >
             {book.title}
           </h3>
@@ -509,32 +511,35 @@ export default function MainWebPage() {
           </p>
 
           <div className="flex items-center justify-center gap-2 pt-1.5 pb-2">
-            <span className="text-base font-black text-gray-900">${book.price?.toFixed(2)}</span>
+            <span className="text-base font-black text-gray-900 font-mono">${book.price?.toFixed(2)}</span>
             {book.oldPrice && (
-              <span className="text-xs font-bold text-gray-300 line-through">${book.oldPrice?.toFixed(2)}</span>
+              <span className="text-xs font-bold text-gray-300 line-through font-mono">${book.oldPrice?.toFixed(2)}</span>
             )}
           </div>
         </div>
 
         {/* Action Button: white background, thick orange border */}
-        <button
+        <motion.button
           onClick={() => handleAddToCart(book._id)}
-          className={`w-full h-9 rounded-sm font-bold text-xs uppercase tracking-wider transition-all active:scale-[0.97] mt-auto flex items-center justify-center border-2 ${
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.96 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          className={`w-full h-9 rounded-sm font-bold text-xs uppercase tracking-wider transition-all mt-auto flex items-center justify-center border-2 ${
             addedToCart[book._id] 
-              ? "bg-emerald-50 border-emerald-500 text-emerald-600" 
-              : "bg-white border-[#D49B00] text-[#D49B00] hover:bg-[#D49B00] hover:text-white"
+              ? "bg-emerald-50 border-emerald-500 text-emerald-600 animate-pulse" 
+              : "bg-white border-gold text-gold hover:bg-gold hover:text-white"
           }`}
         >
           <span>{addedToCart[book._id] ? "Added" : "Add to Cart"}</span>
-        </button>
+        </motion.button>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] font-sans text-gray-900 flex flex-col relative">
+    <div className="min-h-screen bg-parchment font-sans text-ink flex flex-col relative">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Cinzel:wght@400;700&display=swap');
 
         .font-display {
           font-family: 'Cormorant Garamond', serif;
@@ -548,13 +553,19 @@ export default function MainWebPage() {
         }
 
         /* Enforce fonts and no italics rules */
-        body, .font-sans, p, span, div, button, input {
+        body, .font-sans, p, div, button, input {
           font-family: 'Plus Jakarta Sans', sans-serif !important;
           font-style: normal !important;
         }
         h1, h2, h3, h4, .font-serif, .font-display {
           font-family: 'Cormorant Garamond', serif !important;
           font-style: normal !important;
+        }
+        .font-cinzel-lbl {
+          font-family: 'Cinzel', serif !important;
+          font-style: normal !important;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
         }
       `}</style>
       
@@ -567,9 +578,11 @@ export default function MainWebPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           
           <div className="flex items-center gap-6" ref={dropdownRef}>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setDetailedBookId(null); setSelectedBook(null); setSearchQuery(""); setSearchResults([]); handleClearGenre(); }}>
-              <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
-              <span className="text-xl font-black text-gray-900 tracking-tight">BookHaven</span>
+            <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => { handleBackToHome(); }}>
+              <BookOpen className="w-7 h-7 text-gold" strokeWidth={2.5} />
+              <span className="text-lg font-black tracking-tight text-gray-900 uppercase font-cinzel-lbl">
+                Book<span className="text-gold">Haven</span>
+              </span>
             </div>
 
             <div className="relative">
@@ -649,8 +662,8 @@ export default function MainWebPage() {
 
           {/* Thanh Tìm Kiếm Thông Minh */}
           <div ref={searchRef} className="hidden md:block relative flex-1 max-w-md z-50">
-            <div className={`flex items-center gap-1 bg-gray-100 rounded-xl px-4 py-2.5 w-full border transition-all ${
-              isSearchFocused ? "bg-white border-[#D49B00] ring-4 ring-amber-500/5 shadow-sm" : "border-transparent"
+            <div className={`flex items-center flex-1 max-w-md mx-6 border rounded-2xl bg-gray-50/50 px-3.5 py-1.8 transition-all duration-300 ${
+              isSearchFocused ? "bg-white border-gold ring-4 ring-amber-500/5 shadow-sm" : "border-transparent"
             }`}>
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
               <input
@@ -709,7 +722,7 @@ export default function MainWebPage() {
           {/* Tiện Ích Người Dùng */}
           <div className="flex items-center gap-3">
             {/* Spotify Wrapped button */}
-            <button 
+            <motion.button 
               onClick={() => {
                 if (!isAuthenticated) {
                   alert("Please login or sign up to view your 2026 Reading Wrapped!");
@@ -718,11 +731,14 @@ export default function MainWebPage() {
                   navigate("/lookback");
                 }
               }} 
-              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-purple-600 via-[#D49B00] to-purple-600 text-white rounded-xl text-xs font-black shadow-md shadow-purple-500/15 hover:shadow-purple-500/25 transition-all hover:scale-102 active:scale-98 animate-pulse"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-cta-gradient text-white rounded-xl text-xs font-black shadow-md shadow-gold/15 transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 fill-current text-amber-300" />
-              <span className="hidden sm:inline">2026 WRAPPED</span>
-            </button>
+              <Sparkles className="w-3.5 h-3.5 fill-current text-white animate-pulse" />
+              <span className="hidden sm:inline font-cinzel-lbl text-[10px]">2026 REWIND</span>
+            </motion.button>
 
             <button 
               onClick={() => {
@@ -751,7 +767,7 @@ export default function MainWebPage() {
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#D49B00] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-gold text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center font-mono">
                   {cartCount}
                 </span>
               )}
@@ -763,9 +779,15 @@ export default function MainWebPage() {
                 <span className="hidden lg:block">Logout</span>
               </button>
             ) : (
-              <button onClick={() => navigate("/login")} className="flex items-center gap-1.5 px-4 py-2 bg-[#D49B00] hover:bg-[#d9561c] text-white rounded-xl text-xs font-black transition-all">
+              <motion.button 
+                onClick={() => navigate("/login")}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-cta-gradient hover:bg-cta-gradient-hover text-white rounded-xl text-xs font-black transition-all"
+              >
                 Login
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
@@ -782,7 +804,9 @@ export default function MainWebPage() {
           <p className="text-lg font-bold">System Connection Failed: {error}</p>
           <p className="text-sm text-gray-400 mt-1">Please ensure localhost API server is active.</p>
         </div>
-      ) : !detailedBookId ? (
+      ) : (
+        <LayoutGroup>
+          {!detailedBookId ? (
         
         // =================================================================
         // KHÔNG GIAN 1: TRANG CHỦ HOẶC TRANG KẾT QUẢ TÌM KIẾM
@@ -1142,6 +1166,8 @@ export default function MainWebPage() {
             )}
           />
         )
+      )}
+        </LayoutGroup>
       )}
 
       {/* ==================== BOOK DETAILS POPUP MODAL NGUYÊN BẢN (2 CỘT) ==================== */}
