@@ -9,7 +9,7 @@ export const useMainPageLogic = () => {
   const dropdownRef = useRef(null);
   
   const bookLogic = useBook();
-  const sliderLogic = useHeroSlider(false, 4000);
+  const sliderLogic = useHeroSlider(false, 100000);
 
   const [recommendedBooks, setRecommendedBooks] = useState([]);
   const [recommendationMeta, setRecommendationMeta] = useState({

@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { LayoutGroup } from "framer-motion";
+import { useMemo, useState } from "react";
+import { LayoutGroup, motion, AnimatePresence } from "framer-motion";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import HeroSlider from "../components/ui/HeroSlider";
@@ -7,81 +7,96 @@ import BookDetailPage from "./BookDetailPage";
 import BookPreviewModal from "../components/ui/BookPreviewModal";
 import BookCarousel from "../components/ui/BookCarousel"; 
 import { useMainPageLogic } from "../hooks/useMainPageLogic";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 
 import GenreBooksView from "../components/views/GenreBooksView";
 import SearchResultsView from "../components/views/SearchResultsView";
 
-// Import file nền gỗ
-import woodTexture from "../images/vintage2.jpg";
+import woodTexture from "../images/bg2.jpg";
+import vintageTexture from "../images/card3.jpg";
+
+function SectionWrapper({ title, children }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div 
+      className="relative my-10 overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+      style={{ 
+        maskImage: `linear-gradient(to bottom, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%)`,
+        WebkitMaskImage: `linear-gradient(to bottom, transparent 0%, black 15px, black calc(100% - 15px), transparent 100%)`
+      }}
+    >
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${vintageTexture})` }} />
+      <div className="absolute inset-0 bg-[#fdf6e3]/80" />
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative z-10 w-full p-8 flex justify-between items-center hover:bg-[#5a3e2b]/5 transition-colors"
+      >
+        <h2 className="text-3xl font-serif text-[#5a3e2b] italic">{title}</h2>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+          <ChevronDown className="text-[#5a3e2b]" size={28} />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="relative z-10 px-8 pb-8"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function MainWebPage() {
   const logic = useMainPageLogic();
 
-  // Xác định trạng thái hiển thị để tránh xung đột render
   const isViewingDetail = !!logic.detailedBookId;
   const isViewingGenre = !isViewingDetail && logic.selectedGenre !== "";
   const isSearching = !isViewingDetail && !isViewingGenre && logic.searchQuery.trim() !== "";
 
-  // Sử dụng useMemo để tính toán danh sách không trùng lặp, đảm bảo tính ổn định khi render
   const sections = useMemo(() => {
     const recommended = logic.getRecommendedBooks();
     const recIds = recommended.map(b => b._id);
-
     const mayBooks = logic.getBooksOfMay(recIds);
     const mayIds = [...recIds, ...mayBooks.map(b => b._id)];
-
     const juneBooks = logic.getBooksOfJune(mayIds);
     const juneIds = [...mayIds, ...juneBooks.map(b => b._id)];
-
     const bizBooks = logic.getBusinessSelfHelpBooks(juneIds);
-
     return { recommended, mayBooks, juneBooks, bizBooks };
   }, [logic.books, logic.recommendedBooks, logic.brokenImages]);
 
   return (
     <div 
-      className="min-h-screen font-sans text-ink flex flex-col relative"
+      className="min-h-screen font-sans text-ink flex flex-col relative bg-cover bg-center bg-fixed"
       style={{ 
-        backgroundImage: `url(${woodTexture})`, 
-        backgroundSize: 'cover', 
-        backgroundAttachment: 'fixed',
-        backgroundPosition: 'center' 
+        backgroundColor: '#f5efe0',
+        backgroundImage: isViewingDetail ? `url(${vintageTexture})` : `url(${woodTexture})`,
+        backgroundRepeat: 'no-repeat'
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Cinzel:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         body, .font-sans { font-family: 'Plus Jakarta Sans', sans-serif !important; }
         h1, h2, h3, h4, .font-serif { font-family: 'Cormorant Garamond', serif !important; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-
-      {logic.isSearchFocused && (
-        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40 transition-all duration-200" />
-      )}
 
       <Navbar {...logic} />
 
-      {logic.loading ? (
-        <div className="flex-grow flex flex-col items-center justify-center py-32 text-white/70">
-          <Loader2 className="w-10 h-10 animate-spin text-[#D49B00] mb-4" />
-          <p className="text-base font-semibold">Synchronizing with system database...</p>
-        </div>
-      ) : logic.error ? (
-        <div className="flex-grow flex flex-col items-center justify-center py-32 text-red-300">
-          <p className="text-lg font-bold">System Connection Failed: {logic.error}</p>
-        </div>
-      ) : (
-        <LayoutGroup>
-          <div className="flex-grow">
+      <main className="flex-grow w-full">
+        {logic.loading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-white/70">
+            <Loader2 className="w-10 h-10 animate-spin text-[#D49B00] mb-4" />
+          </div>
+        ) : (
+          <LayoutGroup>
+            {/* Đã xóa div bao bọc có class bg-[#fdf6e3]/70 gây lỗi vệt dư thừa */}
             {isViewingDetail ? (
-              <BookDetailPage 
-                book={logic.detailedBook}
-                onBackToHome={logic.handleBackToHome}
-                onBackToGenre={(genre) => { logic.setDetailedBookId(null); logic.handleSelectGenre(genre); }}
-                {...logic}
-              />
+              <BookDetailPage book={logic.detailedBook} onBackToHome={logic.handleBackToHome} {...logic} />
             ) : isViewingGenre ? (
               <GenreBooksView {...logic} />
             ) : isSearching ? (
@@ -89,42 +104,25 @@ export default function MainWebPage() {
             ) : (
               <>
                 <HeroSlider {...logic} />
-                {/* Loại bỏ màu nền, chỉ để lại hiệu ứng mờ nhẹ giúp chữ dễ đọc nhưng vẫn xuyên thấu nền gỗ */}
-                <div className="max-w-7xl mx-auto py-12 space-y-12 backdrop-blur-[1px] bg-white/5 px-4">
-                  <BookCarousel 
-                    title={logic.getRecommendationTitle()} 
-                    books={sections.recommended} 
-                    colorClass="bg-[#D49B00]" 
-                    label={logic.getRecommendationBadge()} 
-                    {...logic} 
-                  />
-                  <BookCarousel 
-                    title="Featured: Books of May" 
-                    books={sections.mayBooks} 
-                    colorClass="bg-emerald-500" 
-                    label="May Collection" 
-                    {...logic} 
-                  />
-                  <BookCarousel 
-                    title="Upcoming: Books of June" 
-                    books={sections.juneBooks} 
-                    colorClass="bg-blue-500" 
-                    label="New Arrival" 
-                    {...logic} 
-                  />
-                  <BookCarousel 
-                    title="Top Business & Self-Help" 
-                    books={sections.bizBooks} 
-                    colorClass="bg-amber-500" 
-                    label="Personal Growth" 
-                    {...logic} 
-                  />
+                <div className="max-w-7xl mx-auto py-12 px-4">
+                  <SectionWrapper title={logic.getRecommendationTitle()}>
+                    <BookCarousel books={sections.recommended} colorClass="bg-[#D49B00]" label={logic.getRecommendationBadge()} {...logic} />
+                  </SectionWrapper>
+                  <SectionWrapper title="Featured: Books of May">
+                    <BookCarousel books={sections.mayBooks} colorClass="bg-emerald-500" label="May Collection" {...logic} />
+                  </SectionWrapper>
+                  <SectionWrapper title="Upcoming: Books of June">
+                    <BookCarousel books={sections.juneBooks} colorClass="bg-blue-500" label="New Arrival" {...logic} />
+                  </SectionWrapper>
+                  <SectionWrapper title="Top Business & Self-Help">
+                    <BookCarousel books={sections.bizBooks} colorClass="bg-amber-500" label="Personal Growth" {...logic} />
+                  </SectionWrapper>
                 </div>
               </>
             )}
-          </div>
-        </LayoutGroup>
-      )}
+          </LayoutGroup>
+        )}
+      </main>
 
       <BookPreviewModal {...logic} />
       <Footer />

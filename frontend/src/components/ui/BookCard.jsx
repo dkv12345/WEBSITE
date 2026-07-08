@@ -1,6 +1,6 @@
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
-import vintageBg from "../../images/vintage4.jpg"; // Import ảnh vintage
+import vintageBg from "../../images/card.jpg"; 
 
 export default function BookCard({
   book,
@@ -16,6 +16,9 @@ export default function BookCard({
   if (!book) return null;
   const primaryGenre = book.genres?.[0] || "General";
 
+  // SVG cho hiệu ứng giấy xé (Tear Effect)
+  const tearMask = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpath d='M0 0h200v200H0z' fill='%23000'/%3E%3Cpath d='M0 10c5 5 10 0 15 5s5 10 15 10 10-5 15 0 5 10 15 10 10-5 15 0 5 10 15 10 10-5 15 0 5 10 15 10 10-5 15 0 5 10 15 10 10-5 15 0' fill='%23fff'/%3E%3C/svg%3E")`;
+
   const handleCardClick = (e) => {
     e.stopPropagation();
     if (typeof setSelectedBook === 'function') {
@@ -27,13 +30,22 @@ export default function BookCard({
 
   return (
     <div 
-      className="group rounded-none border border-gray-100 hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex flex-col overflow-hidden p-3.5 relative h-full"
-      style={{ backgroundImage: `url(${vintageBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      className="group transition-all duration-300 flex flex-col p-3.5 relative h-full bg-cover bg-center"
+      style={{ 
+        backgroundImage: `url(${vintageBg})`,
+        // Áp dụng mặt nạ giấy xé
+        WebkitMaskImage: `linear-gradient(to bottom, black 95%, transparent 100%), linear-gradient(to right, black 95%, transparent 100%)`,
+        maskImage: `linear-gradient(to bottom, black 95%, transparent 100%), linear-gradient(to right, black 95%, transparent 100%)`,
+        // Hoặc dùng SVG phức tạp hơn nếu muốn xé răng cưa:
+        // WebkitMaskImage: tearMask,
+        // maskImage: tearMask,
+        // maskSize: '100% 100%'
+      }}
     >
       {/* Favorite button */}
       <button 
         onClick={(e) => { e.stopPropagation(); toggleLike(book._id); }}
-        className="absolute top-5 right-5 z-20 w-8 h-8 rounded-none bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-sm text-gray-400 hover:text-red-500 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+        className="absolute top-5 right-5 z-20 w-8 h-8 flex items-center justify-center shadow-sm text-gray-400 hover:text-red-500 hover:scale-105 active:scale-95 transition-all cursor-pointer"
       >
         <Heart className={`w-4 h-4 ${liked[book._id] ? "fill-red-500 text-red-500" : ""}`} />
       </button>
@@ -41,44 +53,36 @@ export default function BookCard({
       {/* Cover image */}
       <div 
         onClick={handleCardClick}
-        className="w-full aspect-[3/4] bg-gray-50 rounded-none overflow-hidden relative cursor-pointer mb-4 select-none"
+        className="w-full aspect-[3/4] bg-gray-200 overflow-hidden relative cursor-pointer mb-4 shadow-inner"
       >
         <motion.img 
           layoutId={`book-cover-${book._id}`}
           src={book.images?.medium || book.images?.large || "https://placehold.co/300x400?text=No+Cover"} 
           alt={book.title}
-          onError={() => {
-            setBrokenImages(prev => new Set(prev).add(book._id));
-          }}
-          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          onError={() => setBrokenImages(prev => new Set(prev).add(book._id))}
+          className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.08)_0%,_rgba(0,0,0,0.15)_3%,_rgba(255,255,255,0.1)_5%,_rgba(0,0,0,0)_12%)] pointer-events-none" />
       </div>
 
       {/* Info */}
       <div className="flex-grow flex flex-col text-center space-y-1.5 px-1">
-        <div>
-          <span className="text-[10px] font-cinzel-lbl text-gold bg-gold/5 border border-gold/20 px-2 py-0.5 rounded-none uppercase tracking-wider">
-            {primaryGenre}
-          </span>
-        </div>
+        <span className="text-[9px] font-bold text-gold uppercase tracking-widest">
+          {primaryGenre}
+        </span>
         
         <button 
           onClick={handleCardClick}
-          className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-gold cursor-pointer transition-colors pt-1 min-h-[40px] leading-snug font-display text-center w-full"
+          className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-gold transition-colors font-display"
         >
           {book.title}
         </button>
         
-        <p className="text-[11px] text-gray-400 font-medium truncate">
-          by {book.author || "Unknown Author"}
+        <p className="text-[10px] text-gray-500 italic">
+          {book.author || "Unknown"}
         </p>
 
-        <div className="flex items-center justify-center gap-2 pt-1.5 pb-2">
-          <span className="text-base font-black text-gray-900 font-mono">${book.price?.toFixed(2)}</span>
-          {book.oldPrice && (
-            <span className="text-xs font-bold text-gray-300 line-through font-mono">${book.oldPrice?.toFixed(2)}</span>
-          )}
+        <div className="pt-2">
+          <span className="text-sm font-black text-gray-900">${book.price?.toFixed(2)}</span>
         </div>
       </div>
 
@@ -86,14 +90,11 @@ export default function BookCard({
       <motion.button
         onClick={(e) => { e.stopPropagation(); handleAddToCart(book._id); }}
         whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.96 }}
-        className={`w-full h-9 rounded-sm font-bold text-xs uppercase tracking-wider transition-all mt-auto flex items-center justify-center border-2 cursor-pointer ${
-          addedToCart[book._id] 
-            ? "bg-emerald-50 border-emerald-500 text-emerald-600 animate-pulse" 
-            : "bg-white border-gold text-gold hover:bg-gold hover:text-white"
+        className={`w-full h-8 text-[10px] font-bold uppercase tracking-widest mt-4 border border-black transition-colors ${
+          addedToCart[book._id] ? "bg-black text-white" : "bg-transparent hover:bg-black hover:text-white"
         }`}
       >
-        <span>{addedToCart[book._id] ? "Added" : "Add to Cart"}</span>
+        {addedToCart[book._id] ? "Added ✓" : "Add to Cart"}
       </motion.button>
     </div>
   );

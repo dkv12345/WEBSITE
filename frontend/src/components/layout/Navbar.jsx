@@ -25,32 +25,33 @@ export default function Navbar({
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-xs">
+    // Đã thêm /80 (opacity 80%) và backdrop-blur-md để làm mờ nhẹ không gian phía sau
+    <nav className="sticky top-0 z-50 bg-[#F7EFE1]/80 backdrop-blur-md border-b border-[#C9A227]/30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
         
         {/* Logo and Menu (Category) Dropdown */}
         <div className="flex items-center gap-6" ref={dropdownRef}>
           <div className="flex items-center gap-1.5 cursor-pointer select-none" onClick={handleBackToHome}>
-            <BookOpen className="w-7 h-7 text-gold" strokeWidth={2.5} />
-            <span className="text-lg font-black tracking-tight text-gray-900 uppercase font-cinzel-lbl">
-              Book<span className="text-gold">Haven</span>
+            <BookOpen className="w-7 h-7 text-[#C9A227]" strokeWidth={2.5} />
+            <span className="text-lg font-black tracking-tight text-[#211B2E] uppercase font-cinzel-lbl">
+              Book<span className="text-[#C9A227]">Haven</span>
             </span>
           </div>
 
           <div className="relative">
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200/50 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-none border border-[#C9A227]/30 text-sm font-bold text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] transition-all cursor-pointer"
             >
-              {isMenuOpen ? <X className="w-4 h-4 text-[#D49B00]" /> : <Menu className="w-4 h-4 text-gray-500" />}
+              {isMenuOpen ? <X className="w-4 h-4 text-[#B5651D]" /> : <Menu className="w-4 h-4 text-[#211B2E]" />}
               <span>Category</span>
             </button>
 
             {isMenuOpen && (
-              <div className="absolute top-[120%] left-0 w-[580px] bg-white border border-gray-100 shadow-xl rounded-2xl p-5 z-50 grid grid-cols-12 gap-5 transition-all">
+              <div className="absolute top-[120%] left-0 w-[580px] bg-[#F7EFE1]/95 backdrop-blur-sm border border-[#C9A227]/30 shadow-2xl p-5 z-50 grid grid-cols-12 gap-5 transition-all">
                 {/* Left pane: Genres List (Top 25) */}
-                <div className="col-span-8 border-r border-gray-100 pr-4">
-                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+                <div className="col-span-8 border-r border-[#C9A227]/20 pr-4">
+                  <div className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider mb-2.5">
                     Explore Top Genres
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 max-h-[240px] overflow-y-auto pr-1">
@@ -63,7 +64,7 @@ export default function Navbar({
                             handleSelectGenre(genre);
                             setIsSearchFocused(false);
                           }}
-                          className="text-left text-[11px] font-semibold text-gray-600 hover:text-[#D49B00] hover:bg-amber-50 px-2 py-1.5 rounded-lg transition-all truncate cursor-pointer"
+                          className="text-left text-[11px] font-semibold text-[#211B2E] hover:text-[#C9A227] hover:bg-[#C9A227]/10 px-2 py-1.5 transition-all truncate cursor-pointer"
                           title={genre}
                         >
                           • {genre}
@@ -71,7 +72,7 @@ export default function Navbar({
                       ))
                     ) : (
                       ["Fiction", "Science", "History", "Business"].map((item) => (
-                        <span key={item} className="text-xs text-gray-400 italic px-2 py-1">Loading genres...</span>
+                        <span key={item} className="text-xs text-[#211B2E]/40 italic px-2 py-1">Loading genres...</span>
                       ))
                     )}
                   </div>
@@ -80,32 +81,32 @@ export default function Navbar({
                 {/* Right pane: Company info and promotions */}
                 <div className="col-span-4 flex flex-col justify-between">
                   <div>
-                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    <div className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider mb-2">
                       Company Pages
                     </div>
                     <div className="space-y-1">
                       <button 
                         onClick={() => { setIsMenuOpen(false); alert("About Us: Welcome to BookHaven, established in 2026 as your trusted knowledge library."); }}
-                        className="w-full text-left font-bold text-sm text-gray-800 hover:text-[#D49B00] py-1 transition-colors flex items-center justify-between cursor-pointer"
+                        className="w-full text-left font-bold text-sm text-[#211B2E] hover:text-[#C9A227] py-1 transition-colors flex items-center justify-between cursor-pointer"
                       >
                         <span>About Us</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                        <ChevronRight className="w-3.5 h-3.5 text-[#C9A227]" />
                       </button>
                       <button 
                         onClick={() => { setIsMenuOpen(false); alert("Contact: Support team available 24/7 at support@bookhaven.com or via hotlines below."); }}
-                        className="w-full text-left font-bold text-sm text-gray-800 hover:text-[#D49B00] py-1 transition-colors flex items-center justify-between cursor-pointer"
+                        className="w-full text-left font-bold text-sm text-[#211B2E] hover:text-[#C9A227] py-1 transition-colors flex items-center justify-between cursor-pointer"
                       >
                         <span>Contact</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                        <ChevronRight className="w-3.5 h-3.5 text-[#C9A227]" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-3 mt-4 border border-gray-100">
-                    <p className="text-[11px] font-semibold text-gray-500 leading-normal">
+                  <div className="bg-[#EDE6D6]/50 rounded-none p-3 mt-4 border border-[#C9A227]/20">
+                    <p className="text-[11px] font-semibold text-[#211B2E]/70 leading-normal">
                       Need bulk purchasing for institutions or libraries?
                     </p>
-                    <span className="text-[11px] font-bold text-[#D49B00] mt-1 inline-flex items-center gap-0.5 cursor-pointer hover:underline">
+                    <span className="text-[11px] font-bold text-[#C9A227] mt-1 inline-flex items-center gap-0.5 cursor-pointer hover:underline">
                       Learn more <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>
@@ -117,28 +118,28 @@ export default function Navbar({
 
         {/* Smart Search Bar */}
         <div ref={searchRef} className="hidden md:block relative flex-1 max-w-md z-50">
-          <div className={`flex items-center flex-1 max-w-md mx-6 border rounded-2xl bg-gray-50/50 px-3.5 py-1.8 transition-all duration-300 ${
-            isSearchFocused ? "bg-white border-gold ring-4 ring-amber-500/5 shadow-sm" : "border-transparent"
+          <div className={`flex items-center flex-1 max-w-md mx-6 border border-[#C9A227]/30 rounded-none bg-[#EDE6D6]/30 px-3.5 py-1.8 transition-all duration-300 ${
+            isSearchFocused ? "bg-white border-[#C9A227] shadow-sm" : ""
           }`}>
-            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <Search className="w-4 h-4 text-[#453576]/50 shrink-0" />
             <input
               type="text"
               placeholder="Search books or authors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
-              className="bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none w-full ml-2"
+              className="bg-transparent text-sm text-[#211B2E] placeholder-[#211B2E]/40 outline-none w-full ml-2"
             />
             {searchQuery && (
-              <X className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" onClick={() => setSearchQuery("")} />
+              <X className="w-4 h-4 text-[#211B2E]/50 cursor-pointer hover:text-[#211B2E]" onClick={() => setSearchQuery("")} />
             )}
           </div>
 
           {/* Search suggestions dropdown */}
           {isSearchFocused && (
-            <div className="absolute top-[115%] left-0 w-full bg-white border border-gray-100 shadow-2xl rounded-2xl overflow-hidden p-4 z-50">
+            <div className="absolute top-[115%] left-0 w-full bg-[#F7EFE1]/95 backdrop-blur-sm border border-[#C9A227]/30 shadow-2xl p-4 z-50">
               <div className="mb-4">
-                <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                <h4 className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider flex items-center gap-1.5 mb-2">
                   <Clock className="w-3.5 h-3.5" /> Recent Keywords
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -146,7 +147,7 @@ export default function Navbar({
                     <span 
                       key={idx}
                       onClick={() => handleSelectKeyword(keyword)}
-                      className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-amber-50 hover:text-[#D49B00] px-3 py-1.5 rounded-lg cursor-pointer border border-gray-100 transition-colors"
+                      className="text-xs font-medium text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#C9A227]/10 hover:text-[#C9A227] px-3 py-1.5 cursor-pointer border border-[#C9A227]/10 transition-colors"
                     >
                       {keyword}
                     </span>
@@ -155,15 +156,15 @@ export default function Navbar({
               </div>
 
               <div>
-                <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                  <Flame className="w-3.5 h-3.5 text-red-500" /> Trending Keywords
+                <h4 className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <Flame className="w-3.5 h-3.5 text-[#B5651D]" /> Trending Keywords
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {trendingSearchesList.map((keyword, idx) => (
                     <span 
                       key={idx}
                       onClick={() => handleSelectKeyword(keyword)}
-                      className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-amber-50 hover:text-[#D49B00] px-3 py-1.5 rounded-lg cursor-pointer border border-gray-100 transition-colors"
+                      className="text-xs font-medium text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#C9A227]/10 hover:text-[#C9A227] px-3 py-1.5 cursor-pointer border border-[#C9A227]/10 transition-colors"
                     >
                       {keyword}
                     </span>
@@ -176,7 +177,6 @@ export default function Navbar({
 
         {/* User Actions */}
         <div className="flex items-center gap-3">
-          {/* Spotify Wrapped button */}
           <motion.button 
             onClick={() => {
               if (!isAuthenticated) {
@@ -189,7 +189,7 @@ export default function Navbar({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-cta-gradient text-white rounded-xl text-xs font-black shadow-md shadow-gold/15 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-cta-gradient text-white rounded-none text-xs font-black shadow-md transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 fill-current text-white animate-pulse" />
             <span className="hidden sm:inline font-cinzel-lbl text-[10px]">2026 REWIND</span>
@@ -204,7 +204,7 @@ export default function Navbar({
                 alert("Profile feature coming soon");
               }
             }} 
-            className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200/40 transition-colors cursor-pointer"
+            className="p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 transition-colors cursor-pointer"
           >
             <User className="w-5 h-5" />
           </button>
@@ -218,11 +218,11 @@ export default function Navbar({
                 navigate("/cart");
               }
             }}
-            className="relative p-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200/40 transition-colors cursor-pointer"
+            className="relative p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 transition-colors cursor-pointer"
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gold text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center font-mono">
+              <span className="absolute -top-1 -right-1 bg-[#C9A227] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center font-mono">
                 {cartCount}
               </span>
             )}
@@ -231,7 +231,7 @@ export default function Navbar({
           {isAuthenticated ? (
             <button 
               onClick={() => navigate("/login")} 
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 text-[#211B2E] hover:text-[#B5651D] transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden lg:block">Logout</span>
@@ -242,7 +242,7 @@ export default function Navbar({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-cta-gradient hover:bg-cta-gradient-hover text-white rounded-xl text-xs font-black transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-cta-gradient hover:bg-cta-gradient-hover text-white rounded-none text-xs font-black transition-all cursor-pointer"
             >
               Login
             </motion.button>

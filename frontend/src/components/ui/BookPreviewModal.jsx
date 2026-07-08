@@ -1,4 +1,5 @@
 import { X, Star, Heart, ChevronRight } from "lucide-react";
+import cardBackground from "../../images/card.jpg";
 
 export default function BookPreviewModal({
   selectedBook,
@@ -15,7 +16,15 @@ export default function BookPreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
       <div className="absolute inset-0" onClick={() => setSelectedBook(null)}></div>
       
-      <div className="bg-white rounded-none max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl border border-gray-100 flex flex-col md:flex-row p-6 gap-6 animate-scale-up">
+      {/* Chỉ thay đổi style ở đây, giữ nguyên toàn bộ class khác */}
+      <div 
+        className="rounded-none max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl border border-gray-100 flex flex-col md:flex-row p-6 gap-6 animate-scale-up"
+        style={{
+          backgroundImage: `url(${cardBackground})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}
+      >
         <button 
           onClick={() => setSelectedBook(null)}
           className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer"
@@ -23,17 +32,29 @@ export default function BookPreviewModal({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Cột Trái: Ảnh Sách */}
-        <div className="w-full md:w-52 h-72 shrink-0 bg-gray-50 rounded-none overflow-hidden shadow-md flex items-center justify-center">
-          <img 
-            src={selectedBook.images?.medium || selectedBook.images?.large || "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover"} 
-            alt={selectedBook.title}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover";
-            }}
-            className="w-full h-full object-cover"
-          />
+        {/* Cột Trái: Ảnh Sách dạng 3D */}
+        <div className="w-full md:w-52 h-72 shrink-0 flex items-center justify-center [perspective:1000px]">
+          <div className="relative w-full h-full shadow-[10px_10px_20px_rgba(0,0,0,0.3)] transition-transform duration-500 hover:[transform:rotateY(-10deg)]">
+            
+            {/* Phần gáy sách (spine) */}
+            <div className="absolute left-0 top-0 w-4 h-full bg-gradient-to-r from-[#d2b48c] to-[#a0522d] shadow-inner"></div>
+            
+            {/* Phần trang sách (pages) */}
+            <div className="absolute right-0 top-0 w-2 h-full bg-[#fdfbf7] border-l border-gray-200">
+              <div className="w-full h-full bg-[repeating-linear-gradient(to_bottom,transparent,transparent_2px,#e5e7eb_2px,#e5e7eb_4px)]"></div>
+            </div>
+
+            {/* Ảnh bìa sách */}
+            <img 
+              src={selectedBook.images?.medium || selectedBook.images?.large || "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover"} 
+              alt={selectedBook.title}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://placehold.co/300x400/e2e8f0/64748b?text=No+Cover";
+              }}
+              className="w-full h-full object-cover relative z-10"
+            />
+          </div>
         </div>
 
         {/* Cột Phải: Thông tin chi tiết */}
