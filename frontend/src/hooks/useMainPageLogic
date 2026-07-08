@@ -1,0 +1,239 @@
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import useBook from "./useBook";
+import useHeroSlider from "./useHeroSlider";
+
+export const useMainPageLogic = () => {
+  const navigate = useNavigate();
+  const searchRef = useRef(null);
+  const dropdownRef = useRef(null);
+  
+  const bookLogic = useBook();
+  const sliderLogic = useHeroSlider(false, 4000);
+
+  const [recommendedBooks, setRecommendedBooks] = useState([]);
+  const [recommendationMeta, setRecommendationMeta] = useState({
+    mode: "catalog", source: "fallback", reason: "Popular catalog picks while you are browsing as a guest."
+  });
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [liked, setLiked] = useState({});
+  const [brokenImages, setBrokenImages] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [addedToCart, setAddedToCart] = useState({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
+  const [isCurtainOpening, setIsCurtainOpening] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null); 
+  const [detailedBookId, setDetailedBookId] = useState(null); 
+  const [detailedBook, setDetailedBook] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsCurtainOpening(false), 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const fetchCartCount = async () => {
+    try {
+      const response = await fetch("/api/cart", { credentials: "include" });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const count = (result.data.items || []).reduce((sum, item) => sum + item.quantity, 0);
+          setCartCount(count);
+        }
+      }
+    } catch (err) { console.error("Error fetching cart count:", err); }
+  };
+
+  const handleBackToHome = () => {
+    setDetailedBookId(null);
+    setSearchQuery("");
+    setSearchResults([]);
+    setActiveSearchQuery("");
+    bookLogic.handleClearGenre();
+  };
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      setRecommendationLoading(true);
+      try {
+        const response = await fetch("/api/recommendations?pageType=Homepage", { credentials: "include" });
+        if (response.ok) {
+          const result = await response.json();
+          setRecommendedBooks(result.data || []);
+          setRecommendationMeta({
+            mode: result.personalizationMode || "catalog",
+            source: result.source || "ai_engine",
+            reason: result.reason || "Personalized with your latest BookHaven signals."
+          });
+        }
+      } catch (err) { console.error("Lỗi fetch recommendations:", err); }
+      finally { setRecommendationLoading(false); }
+    };
+
+    const checkAuthAndLoad = async () => {
+      try {
+        const response = await fetch("/api/auth/check-auth", { credentials: "include" });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setUser(data.user);
+            setIsAuthenticated(true);
+            await fetchRecommendations();
+            await fetchCartCount();
+          }
+        }
+      } catch (err) { console.error("Lỗi kiểm tra đăng nhập:", err); }
+    };
+
+    if (!bookLogic.loading) checkAuthAndLoad();
+  }, [bookLogic.loading]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchRef.current && !searchRef.current.contains(event.target)) setIsSearchFocused(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError("");
+      setActiveSearchQuery("");
+      return;
+    }
+    bookLogic.handleClearGenre();
+    setIsSearching(true);
+    setSearchError("");
+    const controller = new AbortController();
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmedQuery)}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("Failed to load search results.");
+        const result = await response.json();
+        setSearchResults(result.data || []);
+        setActiveSearchQuery(trimmedQuery);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("[Frontend Search] Error:", err.message);
+          setSearchError(err.message || "Something went wrong.");
+        }
+      } finally { if (!controller.signal.aborted) setIsSearching(false); }
+    }, 500);
+    return () => { clearTimeout(delayDebounceFn); controller.abort(); };
+  }, [searchQuery]);
+
+  const handleAddToCart = async (id) => {
+    if (!isAuthenticated) { navigate("/login"); return; }
+    try {
+      const response = await fetch("/api/cart/add", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookId: id, quantity: 1 }), credentials: "include"
+      });
+      const result = await response.json();
+      if (result.success) {
+        setAddedToCart((prev) => ({ ...prev, [id]: true }));
+        setTimeout(() => setAddedToCart((prev) => ({ ...prev, [id]: false })), 1500);
+        fetchCartCount();
+      }
+    } catch (err) { console.error("Error adding to cart:", err); }
+  };
+
+  const toggleLike = (id) => {
+    if (!isAuthenticated) { navigate("/login"); return; }
+    setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleBookClick = async (book, rankPosition = 1) => {
+    if (!book) return;
+    setDetailedBookId(book._id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      await fetch("/api/recommendations/click", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookId: book._id, position: rankPosition, pageType: "Homepage" }),
+        credentials: "include"
+      });
+    } catch (err) { console.error("Error logging recommendation click:", err); }
+  };
+
+  useEffect(() => {
+    if (!detailedBookId) { setDetailedBook(null); return; }
+    const localBook = bookLogic.books.find(b => b._id === detailedBookId);
+    if (localBook) setDetailedBook(localBook);
+    else {
+      const fetchDetail = async () => {
+        setDetailLoading(true);
+        try {
+          const response = await fetch(`/api/books/${detailedBookId}`, { credentials: "include" });
+          const result = await response.json();
+          if (result.success && result.data) setDetailedBook(result.data);
+        } catch (err) { console.error("Error fetching book details:", err); }
+        finally { setDetailLoading(false); }
+      };
+      fetchDetail();
+    }
+  }, [detailedBookId, bookLogic.books]);
+
+  // GETTERS TỐI ƯU HÓA: Sử dụng Set để loại bỏ trùng lặp chính xác 100%
+  const getRecommendedBooks = () => (recommendedBooks.length > 0 ? recommendedBooks : bookLogic.books).filter(b => b._id && !brokenImages.has(b._id)).slice(0, 10);
+  
+  const getRecommendationTitle = () => {
+    if (!isAuthenticated) return "Popular Books For You";
+    const firstName = user?.name?.split(" ")?.[0] || "";
+    return recommendationMeta.mode === "behavioral" && firstName ? `Recommended For ${firstName}` : "Recommended For You";
+  };
+  
+  const getRecommendationBadge = () => recommendationLoading ? "Personalizing..." : (!isAuthenticated ? "Trending" : (recommendationMeta.source === "cache" ? "Cached AI Slate" : "AI Personalized"));
+  
+  const getBooksOfMay = (excludedIds = []) => {
+    const excludedSet = new Set(excludedIds);
+    return bookLogic.books
+      .filter(b => b._id && !brokenImages.has(b._id) && !excludedSet.has(b._id))
+      .filter(b => b.tags?.includes("may") || b.genres?.some(g => g.toLowerCase().includes("fiction")))
+      .slice(0, 10);
+  };
+  
+  const getBooksOfJune = (excludedIds = []) => {
+    const excludedSet = new Set(excludedIds);
+    return bookLogic.books
+      .filter(b => b._id && !brokenImages.has(b._id) && !excludedSet.has(b._id))
+      .filter(b => b.tags?.includes("june") || b.genres?.some(g => g.toLowerCase().includes("history")))
+      .slice(0, 10);
+  };
+  
+  const getBusinessSelfHelpBooks = (excludedIds = []) => {
+    const excludedSet = new Set(excludedIds);
+    const target = ["business", "finance", "self-help", "psychology", "skills"];
+    let filtered = bookLogic.books
+      .filter(b => b._id && !brokenImages.has(b._id) && !excludedSet.has(b._id))
+      .filter(book => (book.genres?.some(g => target.includes(g.toLowerCase())) || book.tags?.some(t => target.includes(t.toLowerCase()))));
+    return (filtered.length === 0 ? bookLogic.books.filter(b => b._id && !brokenImages.has(b._id) && !excludedSet.has(b._id)).slice(0, 10) : filtered).slice(0, 10);
+  };
+  
+  const getRelatedBooks = (currentBook) => currentBook ? bookLogic.books.filter(b => b._id !== currentBook._id && !brokenImages.has(b._id) && b.genres?.some(g => currentBook.genres?.includes(g))).slice(0, 10) : [];
+
+  return {
+    ...bookLogic, ...sliderLogic,
+    navigate, searchRef, dropdownRef, recommendedBooks, recommendationMeta, recommendationLoading,
+    cartCount, liked, brokenImages, searchQuery, addedToCart, isAuthenticated, user, searchResults,
+    isSearching, searchError, activeSearchQuery, isCurtainOpening, isMenuOpen, isSearchFocused,
+    detailedBook, detailLoading, setSearchQuery, handleAddToCart, toggleLike, handleBookClick,
+    handleBackToHome, setIsSearchFocused, setIsMenuOpen, getRecommendedBooks, getRecommendationTitle,
+    getRecommendationBadge, getBooksOfMay, getBooksOfJune, getBusinessSelfHelpBooks, getRelatedBooks,
+    setBrokenImages, setSelectedBook, selectedBook, setDetailedBookId, detailedBookId
+  };
+};

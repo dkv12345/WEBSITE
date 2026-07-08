@@ -12,6 +12,9 @@ export const getBooks = async (req, res) => {
       queryFilter.genres = req.query.genre;
     }
 
+    // Lấy tổng số lượng sách khớp bộ lọc
+    const total = await Book.countDocuments(queryFilter);
+
     // Lấy dữ liệu từ MongoDB
     const books = await Book.find(queryFilter)
       .select("-embedding_vector") // Ẩn đi mảng vector nặng nề để API chạy nhanh hơn
@@ -23,6 +26,7 @@ export const getBooks = async (req, res) => {
     res.status(200).json({
       success: true,
       data: books,
+      total,
     });
   } catch (error) {
     console.error("Lỗi Controller Sách:", error);
@@ -44,5 +48,31 @@ export const getBookById = async (req, res) => {
     res.status(200).json({ success: true, data: book });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Lấy top 25 thể loại nhiều sách nhất
+export const getTopGenres = async (req, res) => {
+  try {
+    const genresAggregation = await Book.aggregate([
+      { $unwind: "$genres" },
+      { $group: { _id: "$genres", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 25 }
+    ]);
+    
+    const genres = genresAggregation.map(item => item._id);
+    
+    res.status(200).json({
+      success: true,
+      data: genres
+    });
+  } catch (error) {
+    console.error("Lỗi Controller Genres:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách thể loại",
+      error: error.message
+    });
   }
 };
