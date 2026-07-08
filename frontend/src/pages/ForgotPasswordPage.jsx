@@ -25,8 +25,41 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F16323] flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-[1100px] bg-white rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px]">
+    <div 
+      className="relative min-h-screen w-full overflow-hidden font-sans flex items-center justify-center p-4 md:p-6"
+      style={{
+        backgroundImage: "url('/background_auth.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    >
+      <div className="absolute inset-0 bg-[#0c0a10]/50 backdrop-blur-xs z-0 pointer-events-none" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+        .font-display {
+          font-family: 'Cormorant Garamond', serif;
+          font-style: normal;
+        }
+        .font-mono-lbl {
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        .font-sans-pref {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Enforce fonts and no italics rules */
+        body, input, span, p, div, button {
+          font-family: 'Plus Jakarta Sans', sans-serif !important;
+          font-style: normal !important;
+        }
+        h1, h2, h3, h4, .font-display {
+          font-family: 'Cormorant Garamond', serif !important;
+          font-style: normal !important;
+        }
+      `}} />
+
+      <div className="relative z-10 w-full max-w-[1100px] bg-[#FAF8F5]/90 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] border border-white/20 shadow-2xl">
         
         {/* === CỘT TRÁI (FORM) === */}
         <div className="w-full md:w-[55%] p-8 md:p-12 lg:pl-14 flex flex-col relative">
@@ -38,7 +71,7 @@ export default function ForgotPasswordPage() {
           </button>
 
           <div className="mt-8 mb-6 flex items-center gap-2.5">
-            <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
+            <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
             <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
           </div>
 
@@ -62,10 +95,10 @@ export default function ForgotPasswordPage() {
                   icon={Mail}
                 />
 
-                <button
+                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-4 shadow-md shadow-orange-500/20 disabled:opacity-70 flex items-center justify-center"
+                  className="w-full py-3.5 px-4 bg-[#D49B00] hover:bg-[#b88600] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-4 shadow-md shadow-amber-500/20 disabled:opacity-70 flex items-center justify-center"
                 >
                   {isLoading ? (
                     <Loader className="w-5 h-5 animate-spin" />
@@ -87,7 +120,7 @@ export default function ForgotPasswordPage() {
               </p>
               <button
                 onClick={() => navigate("/login")}
-                className="w-full py-3.5 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98]"
+                className="w-full py-3.5 px-4 bg-[#D49B00] hover:bg-[#b88600] text-white font-bold rounded-[10px] transition-all active:scale-[0.98]"
               >
                 Back to Login
               </button>
@@ -96,7 +129,7 @@ export default function ForgotPasswordPage() {
 
           <p className="text-left text-sm text-gray-600 mt-auto font-medium">
             Remember your password?{' '}
-            <Link to="/login" className="font-bold text-[#F16323] hover:text-orange-700">
+            <Link to="/login" className="font-bold text-[#D49B00] hover:text-[#b88600]">
               Log in
             </Link>
           </p>

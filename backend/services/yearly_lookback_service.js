@@ -179,7 +179,7 @@ export const runYearlyLookbackBatchPipeline = async () => {
               shareableUrlToken: lookbackData.shareableUrlToken
             }
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
 
         processedCount++;

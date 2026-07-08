@@ -82,7 +82,7 @@ export const getRecommendations = async (req, res) => {
         await RecommendationCache.findOneAndUpdate(
           { userId },
           { recommendations: recommendedBookIds, expiresAt },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
       }
     }

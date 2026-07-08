@@ -202,7 +202,7 @@ export const checkoutCart = async (req, res) => {
         const updatedBook = await Book.findOneAndUpdate(
           { _id: item.bookId._id, stockQuantity: { $gte: item.quantity } },
           { $inc: { stockQuantity: -item.quantity } },
-          { session, new: true }
+          { session, returnDocument: 'after' }
         );
         if (!updatedBook) {
           throw new Error(`Concurrency lock failed: Insufficient stock for "${item.bookId.title}".`);
@@ -219,7 +219,7 @@ export const checkoutCart = async (req, res) => {
         const updatedBook = await Book.findOneAndUpdate(
           { _id: item.bookId._id, stockQuantity: { $gte: item.quantity } },
           { $inc: { stockQuantity: -item.quantity } },
-          { new: true }
+          { returnDocument: 'after' }
         );
         if (!updatedBook) {
           throw new Error(`Concurrency lock failed: Insufficient stock for "${item.bookId.title}".`);

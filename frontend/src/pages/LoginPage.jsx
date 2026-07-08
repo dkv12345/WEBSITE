@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, BookOpen, ArrowLeft, ArrowRight, Loader, AlertCircle } from "lucide-react";
 import InputField from "../components/auth/InputField";
@@ -11,6 +11,10 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [showLetter, setShowLetter] = useState(false);
+  const [typingCompleted, setTypingCompleted] = useState(false);
+  const [loginUserData, setLoginUserData] = useState(null);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -30,17 +34,11 @@ export default function LoginPage() {
       // Lấy data user trả về từ Backend
       const user = response.data.user;
 
-      // Phân luồng điều hướng thông minh
       if (user) {
-        if (user.isVerified === false) {
-          navigate("/verify-email"); // Chưa xác thực email
-        } else if (user.onboardingCompleted === false) {
-          navigate("/onboarding");   // Chưa làm Onboarding
-        } else {
-          navigate("/mainwebpage");  // Đã hoàn tất mọi thứ
-        }
+        setLoginUserData(user);
+        // Hiện lá thư cảm ơn trước khi chuyển tiếp
+        setShowLetter(true);
       } else {
-        // Fallback mặc định
         navigate("/mainwebpage");
       }
     } catch (err) {
@@ -50,9 +48,58 @@ export default function LoginPage() {
     }
   };
 
+  const handleEnterStage = () => {
+    setShowLetter(false);
+    if (loginUserData) {
+      if (loginUserData.isVerified === false) {
+        navigate("/verify-email"); // Chưa xác thực email
+      } else if (loginUserData.onboardingCompleted === false) {
+        navigate("/onboarding");   // Chưa làm Onboarding
+      } else {
+        navigate("/mainwebpage");  // Đã hoàn tất mọi thứ
+      }
+    } else {
+      navigate("/mainwebpage");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F16323] flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-[1100px] bg-white rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px]">
+    <div 
+      className="relative min-h-screen w-full overflow-hidden font-sans flex items-center justify-center p-4 md:p-6"
+      style={{
+        backgroundImage: "url('/background_auth.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    >
+      {/* Dark warm ambient overlay behind the doors */}
+      <div className="absolute inset-0 bg-[#0c0a10]/50 backdrop-blur-xs z-0 pointer-events-none" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+        .font-display {
+          font-family: 'Cormorant Garamond', serif;
+          font-style: normal;
+        }
+        .font-mono-lbl {
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        .font-sans-pref {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Enforce fonts and no italics rules */
+        body, input, span, p, div, button {
+          font-family: 'Plus Jakarta Sans', sans-serif !important;
+          font-style: normal !important;
+        }
+        h1, h2, h3, h4, .font-display {
+          font-family: 'Cormorant Garamond', serif !important;
+          font-style: normal !important;
+        }
+      `}} />
+
+      <div className="relative z-10 w-full max-w-[1100px] bg-[#FAF8F5]/90 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] transition-all duration-1000 shadow-2xl border border-white/20">
 
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative">
           <button
@@ -63,7 +110,7 @@ export default function LoginPage() {
           </button>
 
           <div className="mt-10 mb-8 flex items-center gap-2.5">
-            <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
+            <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
             <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
           </div>
 
@@ -107,11 +154,11 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-[#F16323] focus:ring-[#F16323]"
+                  className="w-4 h-4 rounded border-gray-300 text-[#D49B00] focus:ring-[#D49B00]"
                 />
                 <span className="text-sm text-gray-600 font-medium group-hover:text-gray-900 transition-colors">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm font-bold text-[#F16323] hover:text-orange-700 transition-colors">
+              <Link to="/forgot-password" className="text-sm font-bold text-[#D49B00] hover:text-[#b88600] transition-colors">
                 Forgot Password?
               </Link>
             </div>
@@ -119,7 +166,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-2 disabled:opacity-70 flex items-center justify-center"
+              className="w-full py-3 px-4 bg-[#D49B00] hover:bg-[#b88600] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] mt-2 disabled:opacity-70 flex items-center justify-center"
             >
               {isLoading ? (
                 <Loader className="w-5 h-5 animate-spin" />
@@ -135,7 +182,7 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-[11px] uppercase font-bold tracking-widest">
-                <span className="bg-white px-4 text-gray-400">Or continue with</span>
+                <span className="bg-[#FAF8F5] px-4 text-gray-400">Or continue with</span>
               </div>
             </div>
 
@@ -148,7 +195,7 @@ export default function LoginPage() {
 
           <p className="text-left text-sm text-gray-600 mt-8 font-medium">
             Don't have an account?{' '}
-            <Link to="/signup" className="font-bold text-[#F16323] hover:text-orange-700">
+            <Link to="/signup" className="font-bold text-[#D49B00] hover:text-[#b88600]">
               Sign up
             </Link>
           </p>
@@ -185,10 +232,78 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-
       </div>
+      {/* Immersive Thank-You Letter Overlay */}
+      <div className={`fixed inset-0 z-40 flex items-center justify-center p-4 transition-all duration-700 ${
+        showLetter ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+      }`}>
+        <div className="absolute inset-0 bg-[#0c0a10]/75 backdrop-blur-md" />
+        
+        <div 
+          className="relative w-full max-w-[550px] aspect-[4/5] md:aspect-[3/4] rounded-2xl shadow-2xl p-8 md:p-12 flex flex-col justify-between border border-[#D49B00]/30 transition-transform duration-700 overflow-hidden"
+          style={{
+            backgroundImage: "url('/letter.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        >
+          <div className="absolute inset-0 bg-white/10 mix-blend-overlay pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#2b1d0f]/5 via-transparent to-[#2b1d0f]/15 pointer-events-none" />
+          
+          <div className="space-y-6 relative z-10 text-[#2b1d0f]/90">
+            <div className="flex items-center gap-2 border-b border-[#2b1d0f]/15 pb-4">
+              <BookOpen className="w-6 h-6 text-[#D49B00]" strokeWidth={2.5} />
+              <span className="font-display font-bold text-lg tracking-tight uppercase text-[#2b1d0f]">BookHaven Curator</span>
+            </div>
+
+            <div className="min-h-[220px]">
+              {showLetter && (
+                <TypingText 
+                  text={`Dear Reader,\n\nWelcome to BookHaven. Step inside the grand stage of storytelling, where every page is a new scene and every chapter is a new act.\n\nThank you for joining our community of dreamers, thinkers, and explorers. Your personal literary constellation is waiting to be written.\n\nYours truly,\nThe BookHaven Curator`}
+                  speed={25}
+                  onComplete={() => setTypingCompleted(true)}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="relative z-10 flex justify-center pt-4">
+            <button
+              onClick={handleEnterStage}
+              disabled={!typingCompleted}
+              className={`px-8 py-3 bg-[#2b1d0f] hover:bg-[#1f140a] text-[#FAF8F5] font-mono-lbl text-[10px] uppercase tracking-widest flex items-center gap-3 rounded-xl transition-all shadow-xl active:scale-95 group ${
+                typingCompleted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+              } duration-500`}
+            >
+              <img src="/glowing_key.png" alt="Key" className="w-5 h-5 animate-pulse group-hover:rotate-12 transition-transform" />
+              <span>Open Stage</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
+}
+
+function TypingText({ text, speed = 25, onComplete }) {
+  const [displayedText, setDisplayedText] = useState("");
+  
+  useEffect(() => {
+    let index = 0;
+    setDisplayedText("");
+    const timer = setInterval(() => {
+      setDisplayedText((prev) => prev + text.charAt(index));
+      index++;
+      if (index >= text.length) {
+        clearInterval(timer);
+        if (onComplete) onComplete();
+      }
+    }, speed);
+    return () => clearInterval(timer);
+  }, [text, speed, onComplete]);
+
+  return <span className="whitespace-pre-line leading-relaxed font-display text-[17px] font-semibold text-[#2b1d0f] block">{displayedText}</span>;
 }
 
 function GoogleIcon() {

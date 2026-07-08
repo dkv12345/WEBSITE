@@ -86,7 +86,7 @@ export default function BookDetailPage({
       {/* 1. Breadcrumb navigation */}
       <div className="flex items-center flex-wrap gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
         <span 
-          className="hover:text-[#F16323] cursor-pointer transition-colors" 
+          className="hover:text-[#D49B00] cursor-pointer transition-colors" 
           onClick={onBackToHome}
         >
           Home
@@ -95,7 +95,7 @@ export default function BookDetailPage({
           <>
             <ChevronRight className="w-3 h-3 text-gray-300 stroke-[3]" />
             <span 
-              className="hover:text-[#F16323] cursor-pointer transition-colors max-w-[140px] truncate"
+              className="hover:text-[#D49B00] cursor-pointer transition-colors max-w-[140px] truncate"
               onClick={() => onBackToGenre ? onBackToGenre(currentGenre) : onBackToHome()}
             >
               {currentGenre}
@@ -158,7 +158,7 @@ export default function BookDetailPage({
               {book.genres?.map((g, i) => (
                 <span 
                   key={i} 
-                  className="text-[10px] font-black text-[#E25313] uppercase tracking-widest cursor-default select-none"
+                  className="text-[10px] font-black text-[#D49B00] uppercase tracking-widest cursor-default select-none"
                 >
                   {g}
                 </span>
@@ -170,7 +170,7 @@ export default function BookDetailPage({
             </h1>
             
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-              Author: <span className="text-gray-800 font-black underline underline-offset-2 hover:text-[#F16323] cursor-pointer transition-colors">{book.author}</span>
+              Author: <span className="text-gray-800 font-black underline underline-offset-2 hover:text-[#D49B00] cursor-pointer transition-colors">{book.author}</span>
             </p>
           </div>
 
@@ -192,7 +192,7 @@ export default function BookDetailPage({
           {/* Key highlights (trust indicators) */}
           <div className="grid grid-cols-2 gap-3 max-w-lg pt-1 pb-3 text-[11px] text-gray-500 font-bold border-b border-gray-50">
             <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-orange-50 text-[#F16323] flex items-center justify-center text-[10px]">✓</span>
+              <span className="w-5 h-5 rounded-full bg-amber-50 text-[#D49B00] flex items-center justify-center text-[10px]">✓</span>
               <span>Publisher Verified</span>
             </div>
             <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export default function BookDetailPage({
                 for(let i=0; i<quantity; i++) onAddToCart(book._id);
               }}
               className={`flex-1 min-w-[180px] h-11 rounded-none font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] text-white ${
-                addedToCart[book._id] ? "bg-emerald-600" : "bg-[#F16323] hover:bg-orange-600"
+                addedToCart[book._id] ? "bg-emerald-600" : "bg-[#D49B00] hover:bg-[#b88600]"
               }`}
             >
               {addedToCart[book._id] ? "Added to Cart ✓" : "Add to Cart"}
@@ -295,7 +295,7 @@ export default function BookDetailPage({
               {activeTab === "details" && (
                 <div className="flex items-start gap-6 max-w-md text-left py-2">
                   <div className="shrink-0 pt-0.5">
-                    <Info className="w-6 h-6 text-[#F16323] opacity-95" />
+                    <Info className="w-6 h-6 text-[#D49B00] opacity-95" />
                   </div>
                   
                   <div className="space-y-1.5 text-xs text-gray-900">

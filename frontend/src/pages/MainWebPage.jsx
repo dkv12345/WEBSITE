@@ -19,7 +19,7 @@ const heroSlides = [
     desc: "Explore thousands of titles across every genre. From thrilling fiction to life-changing business insights. Owned by readers, curated by experts.",
     bg: "from-[#1e1b4b] via-[#2e1065] to-[#f16323]", // Thêm dải màu huyền bí huyền ảo pha cam rực rỡ
     badge: "New Release",
-    badgeBg: "bg-orange-500/20 text-orange-300 border-orange-500/30"
+    badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30"
   },
   {
     title: "Upgrade Your Skillset Today",
@@ -85,7 +85,76 @@ export default function MainWebPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [activeSearchQuery, setActiveSearchQuery] = useState("");
-  
+
+  // State quản lý bộ lọc thể loại từ Database (phân trang)
+  const [isCurtainOpening, setIsCurtainOpening] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsCurtainOpening(false);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [genreBooks, setGenreBooks] = useState([]);
+  const [genreBooksPage, setGenreBooksPage] = useState(1);
+  const [genreBooksLoading, setGenreBooksLoading] = useState(false);
+  const [genreBooksError, setGenreBooksError] = useState("");
+  const [hasMoreGenreBooks, setHasMoreGenreBooks] = useState(true);
+
+  const fetchGenreBooks = async (genreName, pageNum = 1, append = false) => {
+    setGenreBooksLoading(true);
+    setGenreBooksError("");
+    try {
+      const limit = 45;
+      const response = await fetch(`/api/books?genre=${encodeURIComponent(genreName)}&limit=${limit}&page=${pageNum}`, {
+        credentials: "include"
+      });
+      if (!response.ok) {
+        throw new Error("Failed to load books for this genre.");
+      }
+      const result = await response.json();
+      const fetchedBooks = result.data || [];
+      
+      if (append) {
+        setGenreBooks((prev) => [...prev, ...fetchedBooks]);
+      } else {
+        setGenreBooks(fetchedBooks);
+      }
+      
+      if (fetchedBooks.length < limit) {
+        setHasMoreGenreBooks(false);
+      } else {
+        setHasMoreGenreBooks(true);
+      }
+      setGenreBooksPage(pageNum);
+    } catch (err) {
+      console.error("[Fetch Genre Books] Error:", err.message);
+      setGenreBooksError(err.message || "Something went wrong.");
+    } finally {
+      setGenreBooksLoading(false);
+    }
+  };
+
+  const handleSelectGenre = (genreName) => {
+    setSelectedGenre(genreName);
+    setSearchQuery("");
+    setSearchResults([]);
+    setActiveSearchQuery("");
+    setGenreBooks([]);
+    setGenreBooksPage(1);
+    setHasMoreGenreBooks(true);
+    fetchGenreBooks(genreName, 1, false);
+  };
+
+  const handleClearGenre = () => {
+    setSelectedGenre("");
+    setGenreBooks([]);
+    setGenreBooksPage(1);
+    setHasMoreGenreBooks(true);
+  };
+
   // Điều hướng hiển thị
   const [selectedBook, setSelectedBook] = useState(null); 
   const [detailedBookId, setDetailedBookId] = useState(null); 
@@ -193,6 +262,9 @@ export default function MainWebPage() {
       setActiveSearchQuery("");
       return;
     }
+
+    // Clear active genre filter when a search is performed
+    setSelectedGenre("");
 
     setIsSearching(true);
     setSearchError("");
@@ -420,14 +492,14 @@ export default function MainWebPage() {
         {/* Centered text fields */}
         <div className="flex-grow flex flex-col text-center space-y-1.5 px-1">
           <div>
-            <span className="text-[10px] font-bold text-[#E25313] bg-orange-50/70 border border-orange-100/60 px-2 py-0.5 rounded-none uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-[#D49B00] bg-amber-50/70 border border-amber-100/60 px-2 py-0.5 rounded-none uppercase tracking-wider">
               {primaryGenre}
             </span>
           </div>
           
           <h3 
             onClick={() => handleBookClick(book, index + 1)}
-            className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-[#F16323] cursor-pointer transition-colors pt-1 min-h-[40px] leading-snug"
+            className="text-sm font-bold text-gray-900 line-clamp-2 hover:text-[#D49B00] cursor-pointer transition-colors pt-1 min-h-[40px] leading-snug"
           >
             {book.title}
           </h3>
@@ -450,7 +522,7 @@ export default function MainWebPage() {
           className={`w-full h-9 rounded-sm font-bold text-xs uppercase tracking-wider transition-all active:scale-[0.97] mt-auto flex items-center justify-center border-2 ${
             addedToCart[book._id] 
               ? "bg-emerald-50 border-emerald-500 text-emerald-600" 
-              : "bg-white border-[#F16323] text-[#F16323] hover:bg-[#F16323] hover:text-white"
+              : "bg-white border-[#D49B00] text-[#D49B00] hover:bg-[#D49B00] hover:text-white"
           }`}
         >
           <span>{addedToCart[book._id] ? "Added" : "Add to Cart"}</span>
@@ -460,7 +532,31 @@ export default function MainWebPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] font-sans text-gray-900 flex flex-col relative">
+    <div className="min-h-screen bg-[#FAF7F2] font-sans text-gray-900 flex flex-col relative">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+        .font-display {
+          font-family: 'Cormorant Garamond', serif;
+          font-style: normal;
+        }
+        .font-mono-lbl {
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        .font-sans-pref {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Enforce fonts and no italics rules */
+        body, .font-sans, p, span, div, button, input {
+          font-family: 'Plus Jakarta Sans', sans-serif !important;
+          font-style: normal !important;
+        }
+        h1, h2, h3, h4, .font-serif, .font-display {
+          font-family: 'Cormorant Garamond', serif !important;
+          font-style: normal !important;
+        }
+      `}</style>
       
       {isSearchFocused && (
         <div className="fixed inset-0 bg-black/25 backdrop-blur-xs z-40 transition-all duration-200" />
@@ -471,8 +567,8 @@ export default function MainWebPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           
           <div className="flex items-center gap-6" ref={dropdownRef}>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setDetailedBookId(null); setSelectedBook(null); setSearchQuery(""); setSearchResults([]); }}>
-              <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setDetailedBookId(null); setSelectedBook(null); setSearchQuery(""); setSearchResults([]); handleClearGenre(); }}>
+              <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
               <span className="text-xl font-black text-gray-900 tracking-tight">BookHaven</span>
             </div>
 
@@ -481,7 +577,7 @@ export default function MainWebPage() {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200/50 transition-all"
               >
-                {isMenuOpen ? <X className="w-4 h-4 text-[#F16323]" /> : <Menu className="w-4 h-4 text-gray-500" />}
+                {isMenuOpen ? <X className="w-4 h-4 text-[#D49B00]" /> : <Menu className="w-4 h-4 text-gray-500" />}
                 <span>Books</span>
               </button>
 
@@ -498,10 +594,10 @@ export default function MainWebPage() {
                             key={genre}
                             onClick={() => {
                               setIsMenuOpen(false);
-                              setSearchQuery(genre);
+                              handleSelectGenre(genre);
                               setIsSearchFocused(false);
                             }}
-                            className="text-left text-xs font-semibold text-gray-600 hover:text-[#F16323] hover:bg-orange-50 px-2 py-1.5 rounded-lg transition-all truncate"
+                            className="text-left text-xs font-semibold text-gray-600 hover:text-[#D49B00] hover:bg-amber-50 px-2 py-1.5 rounded-lg transition-all truncate"
                           >
                             • {genre}
                           </button>
@@ -522,14 +618,14 @@ export default function MainWebPage() {
                       <div className="space-y-1">
                         <button 
                           onClick={() => { setIsMenuOpen(false); alert("About Us: Welcome to BookHaven, established in 2026 as your trusted knowledge library."); }}
-                          className="w-full text-left font-bold text-sm text-gray-800 hover:text-[#F16323] py-1 transition-colors flex items-center justify-between"
+                          className="w-full text-left font-bold text-sm text-gray-800 hover:text-[#D49B00] py-1 transition-colors flex items-center justify-between"
                         >
                           <span>About Us</span>
                           <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                         </button>
                         <button 
                           onClick={() => { setIsMenuOpen(false); alert("Contact: Support team available 24/7 at support@bookhaven.com or via hotlines below."); }}
-                          className="w-full text-left font-bold text-sm text-gray-800 hover:text-[#F16323] py-1 transition-colors flex items-center justify-between"
+                          className="w-full text-left font-bold text-sm text-gray-800 hover:text-[#D49B00] py-1 transition-colors flex items-center justify-between"
                         >
                           <span>Contact</span>
                           <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
@@ -541,7 +637,7 @@ export default function MainWebPage() {
                       <p className="text-[11px] font-semibold text-gray-500 leading-normal">
                         Need bulk purchasing for institutions or libraries?
                       </p>
-                      <span className="text-[11px] font-bold text-[#F16323] mt-1 inline-flex items-center gap-0.5 cursor-pointer hover:underline">
+                      <span className="text-[11px] font-bold text-[#D49B00] mt-1 inline-flex items-center gap-0.5 cursor-pointer hover:underline">
                         Learn more <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -554,7 +650,7 @@ export default function MainWebPage() {
           {/* Thanh Tìm Kiếm Thông Minh */}
           <div ref={searchRef} className="hidden md:block relative flex-1 max-w-md z-50">
             <div className={`flex items-center gap-1 bg-gray-100 rounded-xl px-4 py-2.5 w-full border transition-all ${
-              isSearchFocused ? "bg-white border-[#F16323] ring-4 ring-orange-500/5 shadow-sm" : "border-transparent"
+              isSearchFocused ? "bg-white border-[#D49B00] ring-4 ring-amber-500/5 shadow-sm" : "border-transparent"
             }`}>
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
               <input
@@ -582,7 +678,7 @@ export default function MainWebPage() {
                       <span 
                         key={idx}
                         onClick={() => handleSelectKeyword(keyword)}
-                        className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-orange-50 hover:text-[#F16323] px-3 py-1.5 rounded-lg cursor-pointer border border-gray-100 transition-colors"
+                        className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-amber-50 hover:text-[#D49B00] px-3 py-1.5 rounded-lg cursor-pointer border border-gray-100 transition-colors"
                       >
                         {keyword}
                       </span>
@@ -599,7 +695,7 @@ export default function MainWebPage() {
                       <span 
                         key={idx}
                         onClick={() => handleSelectKeyword(keyword)}
-                        className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-orange-50 hover:text-[#F16323] px-3 py-1.5 rounded-lg cursor-pointer border border-gray-100 transition-colors"
+                        className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-amber-50 hover:text-[#D49B00] px-3 py-1.5 rounded-lg cursor-pointer border border-gray-100 transition-colors"
                       >
                         {keyword}
                       </span>
@@ -622,7 +718,7 @@ export default function MainWebPage() {
                   navigate("/lookback");
                 }
               }} 
-              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-purple-600 via-[#F16323] to-purple-600 text-white rounded-xl text-xs font-black shadow-md shadow-purple-500/15 hover:shadow-purple-500/25 transition-all hover:scale-102 active:scale-98 animate-pulse"
+              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-purple-600 via-[#D49B00] to-purple-600 text-white rounded-xl text-xs font-black shadow-md shadow-purple-500/15 hover:shadow-purple-500/25 transition-all hover:scale-102 active:scale-98 animate-pulse"
             >
               <Sparkles className="w-3.5 h-3.5 fill-current text-amber-300" />
               <span className="hidden sm:inline">2026 WRAPPED</span>
@@ -655,7 +751,7 @@ export default function MainWebPage() {
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#F16323] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-[#D49B00] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {cartCount}
                 </span>
               )}
@@ -667,7 +763,7 @@ export default function MainWebPage() {
                 <span className="hidden lg:block">Logout</span>
               </button>
             ) : (
-              <button onClick={() => navigate("/login")} className="flex items-center gap-1.5 px-4 py-2 bg-[#F16323] hover:bg-[#d9561c] text-white rounded-xl text-xs font-black transition-all">
+              <button onClick={() => navigate("/login")} className="flex items-center gap-1.5 px-4 py-2 bg-[#D49B00] hover:bg-[#d9561c] text-white rounded-xl text-xs font-black transition-all">
                 Login
               </button>
             )}
@@ -678,7 +774,7 @@ export default function MainWebPage() {
       {/* TẢI DỮ LIỆU CHỜ BAN ĐẦU */}
       {loading ? (
         <div className="flex-grow flex flex-col items-center justify-center py-32 text-gray-400">
-          <Loader2 className="w-10 h-10 animate-spin text-[#F16323] mb-4" />
+          <Loader2 className="w-10 h-10 animate-spin text-[#D49B00] mb-4" />
           <p className="text-base font-semibold">Synchronizing with system database...</p>
         </div>
       ) : error ? (
@@ -692,16 +788,89 @@ export default function MainWebPage() {
         // KHÔNG GIAN 1: TRANG CHỦ HOẶC TRANG KẾT QUẢ TÌM KIẾM
         // =================================================================
         <div className="flex-grow">
-          {searchQuery.trim() !== "" ? (
+          {selectedGenre !== "" ? (
+            /* BỘ LỌC THEO THỂ LOẠI TỪ DATABASE (GENRE FILTER RESULTS) */
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-8 min-h-[50vh]">
+              <div className="flex items-center justify-between border-b border-gray-200/60 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-7 bg-[#D49B00] rounded-full" />
+                  <h2 className="text-xl font-black tracking-tight text-gray-900 uppercase">
+                    Genre: {selectedGenre}
+                  </h2>
+                  {genreBooksLoading && (
+                    <span className="text-xs font-bold text-[#D49B00] bg-amber-50 px-2.5 py-1 rounded-md animate-pulse">
+                      Loading...
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={handleClearGenre}
+                  className="text-xs font-bold text-gray-500 hover:text-[#D49B00] bg-gray-100 hover:bg-amber-50 px-3.5 py-1.5 rounded-xl transition-all"
+                >
+                  Clear Filter
+                </button>
+              </div>
+
+              {genreBooks.length === 0 && genreBooksLoading ? (
+                <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                  <Loader2 className="w-10 h-10 animate-spin text-[#D49B00] mb-4" />
+                  <p className="text-base font-semibold">Fetching books from database...</p>
+                </div>
+              ) : genreBooksError ? (
+                <div className="flex flex-col items-center justify-center py-20 text-red-500">
+                  <p className="text-base font-bold">Failed to load genre: {genreBooksError}</p>
+                </div>
+              ) : genreBooks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-32 text-gray-400">
+                  <BookOpen className="w-12 h-12 text-gray-300 mb-4" />
+                  <p className="text-base font-bold text-gray-600">No books found in this genre</p>
+                  <button
+                    onClick={handleClearGenre}
+                    className="mt-4 bg-[#D49B00] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-[#d9561c] transition-all"
+                  >
+                    Go Back Home
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-8 animate-fade-in">
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Showing {genreBooks.length} books in {selectedGenre}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    {genreBooks.filter(book => !brokenImages.has(book._id)).map((book) => renderBookCard(book))}
+                  </div>
+
+                  {hasMoreGenreBooks && (
+                    <div className="flex justify-center pt-8">
+                      <button
+                        onClick={() => fetchGenreBooks(selectedGenre, genreBooksPage + 1, true)}
+                        disabled={genreBooksLoading}
+                        className="bg-white text-gray-900 border border-gray-200 hover:border-[#D49B00] hover:text-[#D49B00] font-bold px-8 py-3.5 rounded-2xl text-sm transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {genreBooksLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-[#D49B00]" />
+                            Loading more...
+                          </>
+                        ) : (
+                          "Load More Books"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : searchQuery.trim() !== "" ? (
             /* BỘ LỌC KẾT QUẢ TÌM KIẾM LAI ĐA TẦNG (HYBRID SEARCH RESULTS) */
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-8 min-h-[50vh]">
               <div className="flex items-center gap-3 border-b border-gray-200/60 pb-4">
-                <div className="w-1.5 h-7 bg-[#F16323] rounded-full" />
+                <div className="w-1.5 h-7 bg-[#D49B00] rounded-full" />
                 <h2 className="text-xl font-black tracking-tight text-gray-900 uppercase">
                   Search Results for "{searchQuery}"
                 </h2>
                 {isSearching && (
-                  <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md animate-pulse">
+                  <span className="text-xs font-bold text-[#D49B00] bg-amber-50 px-2.5 py-1 rounded-md animate-pulse">
                     AI Ranking...
                   </span>
                 )}
@@ -709,7 +878,7 @@ export default function MainWebPage() {
 
               {isSearching && searchResults.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-                  <Loader2 className="w-10 h-10 animate-spin text-[#F16323] mb-4" />
+                  <Loader2 className="w-10 h-10 animate-spin text-[#D49B00] mb-4" />
                   <p className="text-base font-semibold">Performing Intent Parsing, BM25 & Semantic Search...</p>
                 </div>
               ) : searchError ? (
@@ -750,7 +919,7 @@ export default function MainWebPage() {
                     <div className="absolute inset-0 opacity-15 pointer-events-none bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
                     
                     {/* Đốm sáng Gradient hình tròn khuếch tán làm bừng sáng góc bìa sách */}
-                    <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+                    <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-[120px] pointer-events-none"></div>
                     <div className="absolute bottom-10 left-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-[90px] pointer-events-none"></div>
 
                     <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 items-center gap-12 relative z-10">
@@ -765,7 +934,7 @@ export default function MainWebPage() {
                           {slide.desc}
                         </p>
                         <div className="flex items-center gap-4 pt-4">
-                          <button className="bg-white text-gray-900 font-black px-8 py-4 rounded-2xl text-sm hover:bg-orange-50 transition-all shadow-xl inline-flex items-center gap-2 active:scale-95 group">
+                          <button className="bg-white text-gray-900 font-black px-8 py-4 rounded-2xl text-sm hover:bg-amber-50 transition-all shadow-xl inline-flex items-center gap-2 active:scale-95 group">
                             <span>Explore Collection</span> 
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </button>
@@ -849,7 +1018,7 @@ export default function MainWebPage() {
                 <section className="space-y-4">
                   <div className="flex items-end justify-between border-b border-gray-200/60 pb-3">
                     <div className="flex items-start gap-2.5">
-                      <div className="w-1.5 h-6 bg-[#F16323] rounded-full mt-0.5" />
+                      <div className="w-1.5 h-6 bg-[#D49B00] rounded-full mt-0.5" />
                       <div>
                         <h2 className="text-lg font-black tracking-tight text-gray-900 uppercase">{getRecommendationTitle()}</h2>
                         <p className="text-xs font-semibold text-gray-400 mt-0.5">
@@ -857,7 +1026,7 @@ export default function MainWebPage() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-[#F16323] bg-orange-50 px-2.5 py-1 rounded-md">{getRecommendationBadge()}</span>
+                    <span className="text-xs font-bold text-[#D49B00] bg-amber-50 px-2.5 py-1 rounded-md">{getRecommendationBadge()}</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
                     {getRecommendedBooks().map((book, idx) => renderBookCard(book, idx))}
@@ -914,13 +1083,13 @@ export default function MainWebPage() {
         /* DETAIL PAGE VIEW */
         detailLoading ? (
           <div className="flex-grow flex items-center justify-center py-20 bg-transparent">
-            <div className="w-8 h-8 border-4 border-[#F16323] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="w-8 h-8 border-4 border-[#D49B00] border-t-transparent rounded-full animate-spin mx-auto"></div>
           </div>
         ) : (
           <BookDetailPage 
             book={detailedBook}
             onBackToHome={() => { setDetailedBookId(null); setSearchQuery(""); }}
-            onBackToGenre={(genre) => { setDetailedBookId(null); setSearchQuery(genre); }}
+            onBackToGenre={(genre) => { setDetailedBookId(null); handleSelectGenre(genre); }}
             onAddToCart={handleAddToCart}
             onToggleLike={toggleLike}
             addedToCart={addedToCart}
@@ -952,7 +1121,7 @@ export default function MainWebPage() {
                   />
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.08)_0%,_rgba(0,0,0,0.15)_3%,_rgba(255,255,255,0.1)_5%,_rgba(0,0,0,0)_12%)] pointer-events-none" />
                 </div>
-                <h4 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#F16323] transition-colors">{b.title}</h4>
+                <h4 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#D49B00] transition-colors">{b.title}</h4>
                 <span className="text-xs font-black text-gray-900 mt-1 mb-3">${b.price?.toFixed(2)}</span>
                 
                 {/* Nút bấm của sách liên quan: Nền trắng, viền cam dày (border-2), bo tròn nhẹ (rounded-sm) */}
@@ -964,7 +1133,7 @@ export default function MainWebPage() {
                   className={`w-full h-8 rounded-sm font-bold text-[10px] uppercase tracking-wider transition-all active:scale-[0.97] mt-auto flex items-center justify-center border-2 ${
                     addedToCart[b._id] 
                       ? "bg-emerald-50 border-emerald-500 text-emerald-600" 
-                      : "bg-white border-[#F16323] text-[#F16323] hover:bg-[#F16323] hover:text-white"
+                      : "bg-white border-[#D49B00] text-[#D49B00] hover:bg-[#D49B00] hover:text-white"
                   }`}
                 >
                   <span>{addedToCart[b._id] ? "Added" : "Add to Cart"}</span>
@@ -1004,7 +1173,7 @@ export default function MainWebPage() {
             {/* Cột Phải: Thông tin chi tiết */}
             <div className="flex flex-col flex-grow justify-between pt-4 md:pt-0">
               <div>
-                <span className="text-xs font-bold text-[#F16323] uppercase tracking-wider">
+                <span className="text-xs font-bold text-[#D49B00] uppercase tracking-wider">
                   {selectedBook.genres?.join(", ") || "General"}
                 </span>
                 <h2 className="text-2xl font-extrabold text-gray-900 mt-1 leading-tight">
@@ -1052,7 +1221,7 @@ export default function MainWebPage() {
                   <button
                     onClick={() => handleAddToCart(selectedBook._id)}
                     className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold text-xs shadow-md transition-all ${
-                      addedToCart[selectedBook._id] ? "bg-green-500 text-white" : "bg-[#F16323] text-white hover:bg-orange-600"
+                      addedToCart[selectedBook._id] ? "bg-green-500 text-white" : "bg-[#D49B00] text-white hover:bg-amber-600"
                     }`}
                   >
                     {addedToCart[selectedBook._id] ? "Added ✓" : "Add To Cart"}
@@ -1068,21 +1237,21 @@ export default function MainWebPage() {
       <footer className="bg-white border-t border-gray-100 mt-20 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 border-b border-gray-50 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center gap-3">
-            <div className="p-3 bg-orange-50 rounded-full text-[#F16323]"><ShieldCheck className="w-6 h-6" /></div>
+            <div className="p-3 bg-amber-50 rounded-full text-[#D49B00]"><ShieldCheck className="w-6 h-6" /></div>
             <div>
               <h5 className="text-xs font-black text-gray-900 uppercase">100% Genuine Books</h5>
               <p className="text-[11px] text-gray-400 mt-0.5 font-medium">Directly sourced from licensed global publishers</p>
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-3">
-            <div className="p-3 bg-orange-50 rounded-full text-[#F16323]"><Loader2 className="w-6 h-6" /></div>
+            <div className="p-3 bg-amber-50 rounded-full text-[#D49B00]"><Loader2 className="w-6 h-6" /></div>
             <div>
               <h5 className="text-xs font-black text-gray-900 uppercase">Express Dispatch</h5>
               <p className="text-[11px] text-gray-400 mt-0.5 font-medium">Secure packaging and same-day delivery routing</p>
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-3">
-            <div className="p-3 bg-orange-50 rounded-full text-[#F16323]"><Check className="w-6 h-6" /></div>
+            <div className="p-3 bg-amber-50 rounded-full text-[#D49B00]"><Check className="w-6 h-6" /></div>
             <div>
               <h5 className="text-xs font-black text-gray-900 uppercase">24/7 Priority Support</h5>
               <p className="text-[11px] text-gray-400 mt-0.5 font-medium">Direct live agent support via hotlines & mailboxes</p>
@@ -1093,7 +1262,7 @@ export default function MainWebPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-2 md:grid-cols-12 gap-8 text-left">
           <div className="col-span-2 md:col-span-4 space-y-4">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-[#F16323]" strokeWidth={2.5} />
+              <BookOpen className="w-6 h-6 text-[#D49B00]" strokeWidth={2.5} />
               <span className="text-lg font-black tracking-tight text-gray-900">BookHaven</span>
             </div>
             <p className="text-xs text-gray-500 font-medium leading-relaxed">
@@ -1109,20 +1278,20 @@ export default function MainWebPage() {
           <div className="col-span-1 md:col-span-2 space-y-3">
             <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">Account Services</h4>
             <ul className="space-y-1.5 text-xs font-bold text-gray-500">
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">User Dashboard</span></li>
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Order Tracking</span></li>
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Wishlists Locker</span></li>
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Purchase Invoices</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">User Dashboard</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Order Tracking</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Wishlists Locker</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Purchase Invoices</span></li>
             </ul>
           </div>
 
           <div className="col-span-1 md:col-span-2 space-y-3">
             <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">Legal Terms</h4>
             <ul className="space-y-1.5 text-xs font-bold text-gray-500">
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Privacy Charter</span></li>
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Terms of Use</span></li>
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Refund Policies</span></li>
-              <li><span className="hover:text-[#F16323] cursor-pointer transition-colors">Affiliate Nodes</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Privacy Charter</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Terms of Use</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Refund Policies</span></li>
+              <li><span className="hover:text-[#D49B00] cursor-pointer transition-colors">Affiliate Nodes</span></li>
             </ul>
           </div>
 
@@ -1143,6 +1312,43 @@ export default function MainWebPage() {
           <p>© 2026 BookHaven Systems Inc. All Rights Reserved. Powered by Vite Framework.</p>
         </div>
       </footer>
+
+      {/* Curtains Opening Transition Overlay */}
+      <div className="fixed inset-0 z-50 flex pointer-events-none select-none overflow-hidden">
+        {/* Left Curtain */}
+        <div 
+          className={`w-1/2 h-full bg-[#5C1E1A] border-r-4 border-[#D49B00] shadow-[10px_0_30px_rgba(0,0,0,0.5)] transition-transform duration-1000 ease-in-out ${
+            isCurtainOpening ? 'translate-x-0' : '-translate-x-full'
+          }`}
+          style={{
+            backgroundImage: "url('/curtain_left.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "right center"
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/30" />
+          <div className="absolute inset-y-0 right-4 w-[1px] bg-[#D49B00]/40" />
+        </div>
+
+        {/* Right Curtain */}
+        <div 
+          className={`w-1/2 h-full bg-[#5C1E1A] border-l-4 border-[#D49B00] shadow-[-10px_0_30px_rgba(0,0,0,0.5)] transition-transform duration-1000 ease-in-out relative overflow-hidden ${
+            isCurtainOpening ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {/* Mirrored background image layer */}
+          <div 
+            className="absolute inset-0 scale-x-[-1]"
+            style={{
+              backgroundImage: "url('/curtain_left.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "right center"
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-black/50 via-transparent to-black/30 pointer-events-none" />
+          <div className="absolute inset-y-0 left-4 w-[1px] bg-[#D49B00]/40 pointer-events-none" />
+        </div>
+      </div>
 
     </div>
   );

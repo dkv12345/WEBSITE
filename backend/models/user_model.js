@@ -55,7 +55,4 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-// Tạo Index để tăng tốc độ truy vấn khi khách hàng đăng nhập
-userSchema.index({ email: 1 });
-
 export const User = mongoose.model('User', userSchema);

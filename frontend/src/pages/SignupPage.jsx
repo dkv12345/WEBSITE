@@ -52,8 +52,41 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F16323] flex items-center justify-center p-4 md:p-6 font-sans">
-      <div className="w-full max-w-[1100px] bg-white rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px]">
+    <div 
+      className="relative min-h-screen w-full overflow-hidden font-sans flex items-center justify-center p-4 md:p-6"
+      style={{
+        backgroundImage: "url('/background_auth.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    >
+      <div className="absolute inset-0 bg-[#0c0a10]/50 backdrop-blur-xs z-0 pointer-events-none" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+        .font-display {
+          font-family: 'Cormorant Garamond', serif;
+          font-style: normal;
+        }
+        .font-mono-lbl {
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        .font-sans-pref {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Enforce fonts and no italics rules */
+        body, input, span, p, div, button {
+          font-family: 'Plus Jakarta Sans', sans-serif !important;
+          font-style: normal !important;
+        }
+        h1, h2, h3, h4, .font-display {
+          font-family: 'Cormorant Garamond', serif !important;
+          font-style: normal !important;
+        }
+      `}} />
+
+      <div className="relative z-10 w-full max-w-[1100px] bg-[#FAF8F5]/90 backdrop-blur-md rounded-3xl flex flex-col md:flex-row overflow-hidden min-h-[680px] border border-white/20 shadow-2xl">
 
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative justify-center">
           <button
@@ -66,7 +99,7 @@ export default function SignUpPage() {
 
           <div className="w-full max-w-[450px] mx-auto flex flex-col flex-1 justify-center">
             <div className="mb-5 flex items-center gap-2.5">
-              <BookOpen className="w-7 h-7 text-[#F16323]" strokeWidth={2.5} />
+              <BookOpen className="w-7 h-7 text-[#D49B00]" strokeWidth={2.5} />
               <span className="text-xl font-extrabold text-gray-900 tracking-tight">BookHaven</span>
             </div>
 
@@ -103,7 +136,7 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 bg-[#F16323] hover:bg-[#d9561c] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-70"
+                className="w-full py-3 px-4 bg-[#D49B00] hover:bg-[#b88600] text-white font-bold rounded-[10px] transition-all active:scale-[0.98] flex items-center justify-center disabled:opacity-70"
               >
                 {isLoading ? <Loader className="w-5 h-5 animate-spin" /> : "Sign Up"}
               </button>
@@ -113,7 +146,7 @@ export default function SignUpPage() {
               <div className="relative">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
                 <div className="relative flex justify-center text-[11px] uppercase font-bold tracking-widest">
-                  <span className="bg-white px-4 text-gray-400">Or register with</span>
+                  <span className="bg-transparent px-4 text-gray-400">Or register with</span>
                 </div>
               </div>
               <div className="mt-4 flex gap-3">
@@ -125,7 +158,7 @@ export default function SignUpPage() {
 
             <p className="text-left text-sm text-gray-600 mt-6 font-medium">
               Already have an account?{' '}
-              <Link to="/login" className="font-bold text-[#F16323] hover:text-orange-700">Log in</Link>
+              <Link to="/login" className="font-bold text-[#D49B00] hover:text-[#b88600]">Log in</Link>
             </p>
           </div>
         </div>

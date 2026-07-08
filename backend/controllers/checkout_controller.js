@@ -187,7 +187,7 @@ const handlePaymentSuccess = async (orderId, sessionId) => {
     const order = await Order.findOneAndUpdate(
       { _id: orderId, status: "pending" },
       { status: "paid" },
-      { session, new: true }
+      { session, returnDocument: 'after' }
     );
     if (!order) {
       console.warn(`Order ${orderId} already processed or missing.`);
