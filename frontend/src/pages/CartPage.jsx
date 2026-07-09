@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "../context/CartContext";
 import {
   ShoppingCart,
   Trash2,
@@ -24,8 +25,13 @@ export default function CartPage() {
   const navigate = useNavigate();
 
   // Cart state management
-  const [cartItems, setCartItems] = useState([]);
-  const [cartLoading, setCartLoading] = useState(true);
+  const {
+    cartItems,
+    cartLoading,
+    fetchCartDetails,
+    updateCartItemQuantity,
+    removeCartItem
+  } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Shipping Information states
@@ -83,21 +89,7 @@ export default function CartPage() {
     setDeliveryEstimate(`${minStr} - ${maxStr}, ${currentYear}`);
   }, []);
 
-  // Fetch active database cart on mount
-  const fetchCartDetails = async () => {
-    setCartLoading(true);
-    try {
-      const response = await fetch("/api/cart", { credentials: "include" });
-      const result = await response.json();
-      if (result.success && result.data) {
-        setCartItems(result.data.items || []);
-      }
-    } catch (err) {
-      console.error("Error fetching cart:", err);
-    } finally {
-      setCartLoading(false);
-    }
-  };
+  // fetchCartDetails is now loaded from CartContext
 
   const fetchCountries = async () => {
     try {
@@ -163,17 +155,9 @@ export default function CartPage() {
 
   // Remove item from database cart
   const removeItem = async (id) => {
-    try {
-      const response = await fetch(`/api/cart/remove/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-      const result = await response.json();
-      if (result.success) {
-        setCartItems(prev => prev.filter(item => (item.bookId?._id !== id && item._id !== id)));
-      }
-    } catch (err) {
-      console.error("Error removing item:", err);
+    const result = await removeCartItem(id);
+    if (result && !result.success) {
+      alert(result.message || "Failed to remove item.");
     }
   };
 
@@ -186,26 +170,9 @@ export default function CartPage() {
     let newQty = type === "increase" ? currentQty + 1 : currentQty - 1;
     if (newQty < 1) newQty = 1;
 
-    try {
-      const response = await fetch("/api/cart/update", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookId: id, quantity: newQty }),
-        credentials: "include"
-      });
-      const result = await response.json();
-      if (result.success) {
-        setCartItems(prev => prev.map(item => {
-          if (item.bookId?._id === id || item._id === id) {
-            return { ...item, quantity: newQty };
-          }
-          return item;
-        }));
-      } else {
-        alert(result.message || "Insufficient inventory stock.");
-      }
-    } catch (err) {
-      console.error("Error updating quantity:", err);
+    const result = await updateCartItemQuantity(id, newQty);
+    if (result && !result.success) {
+      alert(result.message || "Insufficient inventory stock.");
     }
   };
 

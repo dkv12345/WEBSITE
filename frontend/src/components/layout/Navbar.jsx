@@ -1,4 +1,4 @@
-import { BookOpen, Search, X, Menu, Clock, Flame, Sparkles, User, ShoppingCart, LogOut, ChevronRight, ArrowRight } from "lucide-react";
+import { BookOpen, Search, X, Menu, Clock, Flame, Sparkles, User, ShoppingCart, LogOut, ChevronRight, ArrowRight, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { recentSearchesList, trendingSearchesList } from "../../config/constants";
 
@@ -17,7 +17,10 @@ export default function Navbar({
   handleBackToHome,
   navigate,
   searchRef,
-  dropdownRef
+  dropdownRef,
+  openCartDrawer,
+  openWishlistDrawer,
+  wishlistCount
 }) {
   const handleSelectKeyword = (keyword) => {
     setSearchQuery(keyword);
@@ -41,17 +44,17 @@ export default function Navbar({
           <div className="relative">
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-2 px-4 py-2 rounded-none border border-[#C9A227]/30 text-sm font-bold text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-md border border-[#C9A227]/30 text-sm font-bold text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] transition-all cursor-pointer"
             >
               {isMenuOpen ? <X className="w-4 h-4 text-[#B5651D]" /> : <Menu className="w-4 h-4 text-[#211B2E]" />}
               <span>Category</span>
             </button>
 
             {isMenuOpen && (
-              <div className="absolute top-[120%] left-0 w-[580px] bg-[#F7EFE1]/95 backdrop-blur-sm border border-[#C9A227]/30 shadow-2xl p-5 z-50 grid grid-cols-12 gap-5 transition-all">
+              <div className="absolute top-[120%] left-0 w-[580px] bg-[#F7EFE1]/95 backdrop-blur-sm border border-[#C9A227]/30 shadow-xl shadow-ink/10 rounded-md p-5 z-50 grid grid-cols-12 gap-5 transition-all">
                 {/* Left pane: Genres List (Top 25) */}
                 <div className="col-span-8 border-r border-[#C9A227]/20 pr-4">
-                  <div className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider mb-2.5">
+                  <div className="text-[11px] font-bold text-[#B5651D] uppercase tracking-wider mb-2.5">
                     Explore Top Genres
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 max-h-[240px] overflow-y-auto pr-1">
@@ -64,7 +67,7 @@ export default function Navbar({
                             handleSelectGenre(genre);
                             setIsSearchFocused(false);
                           }}
-                          className="text-left text-[11px] font-semibold text-[#211B2E] hover:text-[#C9A227] hover:bg-[#C9A227]/10 px-2 py-1.5 transition-all truncate cursor-pointer"
+                          className="text-left text-[11px] font-semibold text-[#211B2E] hover:text-[#C9A227] hover:bg-[#C9A227]/10 px-2 py-1.5 transition-all rounded-md truncate cursor-pointer"
                           title={genre}
                         >
                           • {genre}
@@ -81,7 +84,7 @@ export default function Navbar({
                 {/* Right pane: Company info and promotions */}
                 <div className="col-span-4 flex flex-col justify-between">
                   <div>
-                    <div className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider mb-2">
+                    <div className="text-[11px] font-bold text-[#B5651D] uppercase tracking-wider mb-2">
                       Company Pages
                     </div>
                     <div className="space-y-1">
@@ -102,7 +105,7 @@ export default function Navbar({
                     </div>
                   </div>
 
-                  <div className="bg-[#EDE6D6]/50 rounded-none p-3 mt-4 border border-[#C9A227]/20">
+                  <div className="bg-[#EDE6D6]/50 rounded-md p-3 mt-4 border border-[#C9A227]/20">
                     <p className="text-[11px] font-semibold text-[#211B2E]/70 leading-normal">
                       Need bulk purchasing for institutions or libraries?
                     </p>
@@ -116,30 +119,30 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Smart Search Bar */}
+        {/* Smart Search Bar - Đã tăng padding và làm rõ màu sắc */}
         <div ref={searchRef} className="hidden md:block relative flex-1 max-w-md z-50">
-          <div className={`flex items-center flex-1 max-w-md mx-6 border border-[#C9A227]/30 rounded-none bg-[#EDE6D6]/30 px-3.5 py-1.8 transition-all duration-300 ${
-            isSearchFocused ? "bg-white border-[#C9A227] shadow-sm" : ""
+          <div className={`flex items-center flex-1 border border-[#C9A227]/30 rounded-md bg-[#EDE6D6]/40 px-5 py-2 transition-all duration-300 ${
+            isSearchFocused ? "bg-white border-[#C9A227] shadow-md ring-1 ring-[#C9A227]/20" : "hover:bg-[#EDE6D6]/60 hover:border-[#C9A227]/50"
           }`}>
-            <Search className="w-4 h-4 text-[#453576]/50 shrink-0" />
+            <Search className="w-5 h-5 text-[#211B2E]/60 shrink-0" />
             <input
               type="text"
               placeholder="Search books or authors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
-              className="bg-transparent text-sm text-[#211B2E] placeholder-[#211B2E]/40 outline-none w-full ml-2"
+              className="bg-transparent text-base text-[#211B2E] placeholder-[#211B2E]/60 font-medium outline-none w-full ml-3"
             />
             {searchQuery && (
-              <X className="w-4 h-4 text-[#211B2E]/50 cursor-pointer hover:text-[#211B2E]" onClick={() => setSearchQuery("")} />
+              <X className="w-5 h-5 text-[#211B2E]/70 cursor-pointer hover:text-[#211B2E]" onClick={() => setSearchQuery("")} />
             )}
           </div>
 
           {/* Search suggestions dropdown */}
           {isSearchFocused && (
-            <div className="absolute top-[115%] left-0 w-full bg-[#F7EFE1]/95 backdrop-blur-sm border border-[#C9A227]/30 shadow-2xl p-4 z-50">
+            <div className="absolute top-[115%] left-0 w-full bg-[#F7EFE1]/95 backdrop-blur-sm border border-[#C9A227]/30 shadow-xl shadow-ink/10 rounded-md p-4 z-50">
               <div className="mb-4">
-                <h4 className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                <h4 className="text-[11px] font-bold text-[#B5651D] uppercase tracking-wider flex items-center gap-1.5 mb-2">
                   <Clock className="w-3.5 h-3.5" /> Recent Keywords
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -147,7 +150,7 @@ export default function Navbar({
                     <span 
                       key={idx}
                       onClick={() => handleSelectKeyword(keyword)}
-                      className="text-xs font-medium text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#C9A227]/10 hover:text-[#C9A227] px-3 py-1.5 cursor-pointer border border-[#C9A227]/10 transition-colors"
+                      className="text-xs font-medium text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#C9A227]/10 hover:text-[#C9A227] px-3 py-1.5 cursor-pointer border border-[#C9A227]/10 rounded-md transition-colors"
                     >
                       {keyword}
                     </span>
@@ -156,7 +159,7 @@ export default function Navbar({
               </div>
 
               <div>
-                <h4 className="text-[11px] font-bold text-[#453576]/60 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                <h4 className="text-[11px] font-bold text-[#B5651D] uppercase tracking-wider flex items-center gap-1.5 mb-2">
                   <Flame className="w-3.5 h-3.5 text-[#B5651D]" /> Trending Keywords
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -164,7 +167,7 @@ export default function Navbar({
                     <span 
                       key={idx}
                       onClick={() => handleSelectKeyword(keyword)}
-                      className="text-xs font-medium text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#C9A227]/10 hover:text-[#C9A227] px-3 py-1.5 cursor-pointer border border-[#C9A227]/10 transition-colors"
+                      className="text-xs font-medium text-[#211B2E] bg-[#EDE6D6]/50 hover:bg-[#C9A227]/10 hover:text-[#C9A227] px-3 py-1.5 cursor-pointer border border-[#C9A227]/10 rounded-md transition-colors"
                     >
                       {keyword}
                     </span>
@@ -189,7 +192,7 @@ export default function Navbar({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-cta-gradient text-white rounded-none text-xs font-black shadow-md transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-cta-gradient text-white rounded-md text-xs font-black shadow-md transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 fill-current text-white animate-pulse" />
             <span className="hidden sm:inline font-cinzel-lbl text-[10px]">2026 REWIND</span>
@@ -204,9 +207,29 @@ export default function Navbar({
                 alert("Profile feature coming soon");
               }
             }} 
-            className="p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 transition-colors cursor-pointer"
+            className="p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 rounded-md transition-colors cursor-pointer"
           >
             <User className="w-5 h-5" />
+          </button>
+
+          {/* Wishlist Heart Icon Button */}
+          <button 
+            onClick={() => {
+              if (!isAuthenticated) {
+                alert("Please login or sign up to view your wishlist!");
+                navigate("/login");
+              } else {
+                openWishlistDrawer();
+              }
+            }}
+            className="relative p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 rounded-md transition-colors cursor-pointer"
+          >
+            <Heart className={`w-5 h-5 ${wishlistCount > 0 ? "text-red-500 fill-red-500 animate-pulse" : ""}`} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-[#B5651D] text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center font-mono shadow-sm">
+                {wishlistCount}
+              </span>
+            )}
           </button>
 
           <button 
@@ -215,14 +238,14 @@ export default function Navbar({
                 alert("Please login or sign up to view your shopping cart!");
                 navigate("/login");
               } else {
-                navigate("/cart");
+                openCartDrawer();
               }
             }}
-            className="relative p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 transition-colors cursor-pointer"
+            className="relative p-2 bg-[#EDE6D6]/50 hover:bg-[#EDE6D6] text-[#211B2E] border border-[#C9A227]/20 rounded-md transition-colors cursor-pointer"
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#C9A227] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center font-mono">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#B5651D] text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center font-mono shadow-sm">
                 {cartCount}
               </span>
             )}
@@ -242,7 +265,7 @@ export default function Navbar({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-cta-gradient hover:bg-cta-gradient-hover text-white rounded-none text-xs font-black transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-cta-gradient hover:bg-cta-gradient-hover text-white rounded-md text-xs font-black transition-all cursor-pointer"
             >
               Login
             </motion.button>

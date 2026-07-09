@@ -65,7 +65,7 @@ export default function YearlyLookbackPage() {
         >
           <Loader2 className="w-9 h-9 text-gold" strokeWidth={2.5} />
         </motion.div>
-        <p className="text-xs font-mono-lbl uppercase tracking-widest text-gold/80">
+        <p className="text-xs font-mono uppercase tracking-widest text-gold/80">
           Compiling your year...
         </p>
       </div>
@@ -89,7 +89,7 @@ export default function YearlyLookbackPage() {
           whileTap={{ scale: 0.96 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
           onClick={() => navigate("/mainwebpage")}
-          className="bg-cta-gradient text-white font-bold text-xs px-6 py-3 rounded-xl cursor-pointer"
+          className="bg-cta-gradient text-white font-bold text-xs px-6 py-3 rounded-md cursor-pointer"
         >
           Return to bookstore
         </motion.button>
@@ -149,7 +149,7 @@ export default function YearlyLookbackPage() {
           </motion.div>
 
           <div className="space-y-3">
-            <span className="font-mono-lbl text-[10px] font-bold text-gold uppercase tracking-[0.2em] bg-gold/10 px-3 py-1.5 rounded-full border border-gold/25">
+            <span className="font-mono text-[10px] font-bold text-gold uppercase tracking-[0.2em] bg-gold/10 px-3 py-1.5 rounded-full border border-gold/25">
               Annual Summary
             </span>
             <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight leading-[1.05] text-starlight pt-2">
@@ -168,9 +168,9 @@ export default function YearlyLookbackPage() {
             whileTap={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => goTo(1)}
-            className="bg-cta-gradient text-white font-bold text-xs px-8 py-4 rounded-full flex items-center gap-2 mx-auto shadow-lg shadow-gold/20 cursor-pointer"
+            className="bg-cta-gradient text-white font-bold text-xs px-8 py-4 rounded-md flex items-center gap-2 mx-auto shadow-lg shadow-gold/20 cursor-pointer"
           >
-            <span className="font-mono-lbl tracking-widest">START MY EXPERIENCE</span>
+            <span className="font-mono tracking-widest">START MY EXPERIENCE</span>
             <Play className="w-3.5 h-3.5 fill-current" />
           </motion.button>
         </div>
@@ -192,7 +192,7 @@ export default function YearlyLookbackPage() {
             <span className="font-display text-3xl text-starlight pb-1">Books</span>
           </div>
           <div className="space-y-2">
-            <span className="font-mono-lbl text-[10px] font-bold text-starlight/50 uppercase tracking-[0.2em]">
+            <span className="font-mono text-[10px] font-bold text-starlight/50 uppercase tracking-[0.2em]">
               Shopping Overview
             </span>
             <p className="text-sm text-starlight/70 leading-relaxed font-medium max-w-sm">
@@ -218,7 +218,7 @@ export default function YearlyLookbackPage() {
       content: (
         <div className="space-y-6 max-w-md w-full px-6">
           <div>
-            <span className="font-mono-lbl text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">
+            <span className="font-mono text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">
               What You Collected
             </span>
             <h2 className="font-display text-2xl font-bold text-starlight mt-1.5">Your Top Genres</h2>
@@ -267,7 +267,7 @@ export default function YearlyLookbackPage() {
       content: (
         <div className="space-y-6 max-w-md w-full px-6">
           <div className="text-center">
-            <span className="font-mono-lbl text-[10px] font-bold text-gold uppercase tracking-[0.2em]">
+            <span className="font-mono text-[10px] font-bold text-gold uppercase tracking-[0.2em]">
               Authors You Trusted
             </span>
             <h2 className="font-display text-2xl font-bold text-starlight mt-1.5">This Year's Circle</h2>
@@ -281,7 +281,7 @@ export default function YearlyLookbackPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.08, duration: 0.4, ease: EASE }}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between"
+                  className="bg-white/5 border border-white/10 rounded-md p-4 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3.5">
                     <span className="w-8 h-8 rounded-full bg-gold/10 text-gold border border-gold/25 flex items-center justify-center font-bold text-xs">
@@ -315,7 +315,7 @@ export default function YearlyLookbackPage() {
           </motion.div>
 
           <div className="space-y-3">
-            <span className="font-mono-lbl text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">
+            <span className="font-mono text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">
               Smart Savings
             </span>
             <p className="font-display text-5xl font-bold text-emerald-400">${moneySaved.toFixed(2)}</p>
@@ -337,7 +337,7 @@ export default function YearlyLookbackPage() {
           content: (
             <div className="space-y-6 max-w-md w-full px-6">
               <div className="text-center">
-                <span className="font-mono-lbl text-[10px] font-bold text-nebula uppercase tracking-[0.2em]" style={{ color: "#a78bfa" }}>
+                <span className="font-mono text-[10px] font-bold text-nebula uppercase tracking-[0.2em]" style={{ color: "#a78bfa" }}>
                   Big Spender Month
                 </span>
                 <h2 className="font-display text-2xl font-bold text-starlight mt-1.5">{peakMonth.month}</h2>
@@ -357,7 +357,7 @@ export default function YearlyLookbackPage() {
                         }`}
                       style={{ minHeight: 4 }}
                     />
-                    <span className="text-[9px] text-starlight/40 font-mono-lbl">{m.month[0]}</span>
+                    <span className="text-[9px] text-starlight/40 font-mono">{m.month[0]}</span>
                   </div>
                 ))}
               </div>
@@ -379,7 +379,7 @@ export default function YearlyLookbackPage() {
       content: (
         <div className="text-center space-y-6 max-w-md px-6">
           <div className="space-y-1">
-            <span className="font-mono-lbl text-[10px] font-bold text-purple-300 uppercase tracking-[0.2em]">
+            <span className="font-mono text-[10px] font-bold text-purple-300 uppercase tracking-[0.2em]">
               Your Reading Persona
             </span>
             <h2 className="font-display text-2xl font-bold text-starlight mt-1">Meet Your Collector Soul</h2>
@@ -389,10 +389,10 @@ export default function YearlyLookbackPage() {
             initial={{ rotateY: 90, opacity: 0 }}
             animate={{ rotateY: 0, opacity: 1 }}
             transition={{ type: "spring", damping: 14, delay: 0.25 }}
-            className="w-64 h-[320px] rounded-3xl bg-gradient-to-b from-[#2E1065] to-[#1E1B4B] border border-purple-500/30 shadow-[0_15px_40px_rgba(139,92,246,0.15)] mx-auto p-6 flex flex-col justify-between relative overflow-hidden"
+            className="w-64 h-[320px] rounded-lg bg-gradient-to-b from-[#2E1065] to-[#1E1B4B] border border-purple-500/30 shadow-[0_15px_40px_rgba(139,92,246,0.15)] mx-auto p-6 flex flex-col justify-between relative overflow-hidden"
           >
             <div className="pt-2">
-              <span className="font-mono-lbl text-[9px] font-bold text-purple-300 tracking-[0.2em] block uppercase">
+              <span className="font-mono text-[9px] font-bold text-purple-300 tracking-[0.2em] block uppercase">
                 The Archetype
               </span>
               <span className="font-display text-2xl font-bold text-starlight block mt-1 tracking-tight uppercase">
@@ -438,17 +438,17 @@ export default function YearlyLookbackPage() {
                 whileTap={{ scale: 0.96 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 onClick={handleShareCopy}
-                className="w-full bg-cta-gradient text-white font-bold text-xs py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-gold/10 cursor-pointer"
+                className="w-full bg-cta-gradient text-white font-bold text-xs py-3.5 rounded-md flex items-center justify-center gap-2 shadow-md shadow-gold/10 cursor-pointer"
               >
                 {copiedLink ? (
                   <>
                     <Check className="w-4 h-4" />
-                    <span className="font-mono-lbl tracking-widest">COPIED SHAREABLE LINK</span>
+                    <span className="font-mono tracking-widest">COPIED SHAREABLE LINK</span>
                   </>
                 ) : (
                   <>
                     <Share2 className="w-4 h-4" />
-                    <span className="font-mono-lbl tracking-widest">SHARE MY REWIND</span>
+                    <span className="font-mono tracking-widest">SHARE MY REWIND</span>
                   </>
                 )}
               </motion.button>
@@ -459,10 +459,10 @@ export default function YearlyLookbackPage() {
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               onClick={() => navigate("/mainwebpage")}
-              className="w-full bg-white/5 border border-white/10 text-starlight font-bold text-xs py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-white/5 border border-white/10 text-starlight font-bold text-xs py-3.5 rounded-md flex items-center justify-center gap-2 cursor-pointer"
             >
               <LogOut className="w-4 h-4 rotate-180" />
-              <span className="font-mono-lbl tracking-widest">Back to Bookstore</span>
+              <span className="font-mono tracking-widest">Back to Bookstore</span>
             </motion.button>
           </div>
         </div>
@@ -557,10 +557,10 @@ export default function YearlyLookbackPage() {
 function StatChip({ label, value, small = false }) {
   return (
     <div
-      className={`bg-white/5 border border-white/10 rounded-2xl text-center ${small ? "p-3" : "p-4 w-28"
+      className={`bg-white/5 border border-white/10 rounded-md text-center ${small ? "p-3" : "p-4 w-28"
         }`}
     >
-      <span className="font-mono-lbl text-[9px] text-starlight/45 uppercase font-bold block">{label}</span>
+      <span className="font-mono text-[9px] text-starlight/45 uppercase font-bold block">{label}</span>
       <span className={`font-display font-bold text-starlight mt-1 block ${small ? "text-base" : "text-lg"}`}>
         {value}
       </span>

@@ -1,5 +1,5 @@
 import { X, Star, Heart, ChevronRight } from "lucide-react";
-import cardBackground from "../../images/card.jpg";
+import cardBackground from "../../images/card3.jpg";
 
 export default function BookPreviewModal({
   selectedBook,
@@ -18,7 +18,7 @@ export default function BookPreviewModal({
       
       {/* Chỉ thay đổi style ở đây, giữ nguyên toàn bộ class khác */}
       <div 
-        className="rounded-none max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl border border-gray-100 flex flex-col md:flex-row p-6 gap-6 animate-scale-up"
+        className="rounded-[10px] max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl border border-gray-100 flex flex-col md:flex-row p-6 gap-6 animate-scale-up"
         style={{
           backgroundImage: `url(${cardBackground})`,
           backgroundSize: "cover",

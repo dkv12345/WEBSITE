@@ -1,7 +1,6 @@
 // Mock data cho thanh tìm kiếm thông minh
 import slide1 from "../images/slide1.png";
 import slide2 from "../images/slide2.png";
-import slide3 from "../images/slide3.png";
 
 export const recentSearchesList = ["Atomic Habits", "The Alchemist", "Sapiens"];
 export const trendingSearchesList = ["Fiction", "History", "Business & Finance", "Self-Help"];
@@ -27,15 +26,6 @@ export const heroSlides = [
     image: slide1, // Thêm dòng này
     isVideo: false,
     badge: "Flash Sale",
-    badgeBg: "bg-gold/15 text-gold border-gold/20"
-  },
-  {
-    title: "Expand Your Knowledge Base",
-    subtitle: "Editor's Choice",
-    desc: "Dive deep into our handpicked masterpieces and best-selling non-fiction titles that are trending worldwide. Discover the untold stories.",
-    image: slide3, // Thêm dòng này
-    isVideo: false,
-    badge: "Trending Now",
     badgeBg: "bg-gold/15 text-gold border-gold/20"
   }
 ];

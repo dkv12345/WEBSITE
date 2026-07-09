@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Home } from "lucide-react";
 import BookCard from "../ui/BookCard";
 
 export default function GenreBooksView({ 
@@ -35,16 +35,17 @@ export default function GenreBooksView({
       {/* Header Section */}
       <div className="flex items-center justify-between border-b border-[#ffffff]/20 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-1.5 h-7 bg-[#D49B00] rounded-none" />
+          <div className="w-1.5 h-7 bg-[#D49B00] rounded-full" />
           <h2 className="text-2xl font-serif text-[#ffffff] uppercase tracking-wide">
             {selectedGenre}
           </h2>
         </div>
         <button
-          onClick={handleHomeClick}
-          className="text-xs font-bold text-gray-500 hover:text-[#5C1E1A] bg-stone-100 px-4 py-2 rounded-full transition-all"
-        >
-          Return Home
+            onClick={handleHomeClick}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gradient-to-r from-[#C9A227] to-[#B5651D] text-white text-xs font-bold uppercase tracking-widest shadow-md hover:from-[#B5651D] hover:to-[#8B4513] hover:shadow-lg active:scale-95 transition-all duration-300"
+            >
+            <Home className="w-3.5 h-3.5" />
+            Return Home
         </button>
       </div>
 
@@ -97,7 +98,7 @@ export default function GenreBooksView({
             <button
               onClick={() => handlePageChange(genreBooksPage + 1)}
               disabled={genreBooksPage === totalPages}
-              className="p-3 rounded-full border border-stone-300 hover:border-[#ffffff] text-stone-600 disabled:opacity-30 transition-all"
+              className="p-3 rounded-full border border-stone-300 hover:border-[#ffffff] text-[#ffffff] disabled:opacity-30 transition-all"
             >
               <ChevronRight className="w-6 h-6" />
             </button>

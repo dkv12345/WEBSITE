@@ -5,9 +5,9 @@ import BookCard from "../ui/BookCard";
 export default function SearchResultsView({ searchResults, isSearching, searchError, searchQuery, activeSearchQuery, liked, toggleLike, addedToCart, handleAddToCart, handleBookClick, setBrokenImages }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 sm:px-6 py-12 min-h-[50vh]">
-      <div className="flex items-center gap-3 border-b border-[#D49B00]/30 pb-4 mb-8">
+      <div className="flex items-center gap-3 border-b border-[#FFFFFF]/30 pb-4 mb-8">
         <div className="w-1.5 h-7 bg-[#D49B00] rounded-full" />
-        <h2 className="text-xl font-serif text-[#5C1E1A] uppercase tracking-wide">Search Results for "{searchQuery}"</h2>
+        <h2 className="text-xl font-serif text-[#FFFFFF] uppercase tracking-wide">Search Results for "{searchQuery}"</h2>
       </div>
 
       {isSearching ? (

@@ -8,11 +8,13 @@ import BookPreviewModal from "../components/ui/BookPreviewModal";
 import BookCarousel from "../components/ui/BookCarousel"; 
 import { useMainPageLogic } from "../hooks/useMainPageLogic";
 import { Loader2, ChevronDown } from "lucide-react";
+import CartDrawer from "../components/ui/CartDrawer";
+import WishlistDrawer from "../components/ui/WishlistDrawer";
 
 import GenreBooksView from "../components/views/GenreBooksView";
 import SearchResultsView from "../components/views/SearchResultsView";
 
-import woodTexture from "../images/bg2.jpg";
+import woodTexture from "../images/bg5.jpg";
 import vintageTexture from "../images/card3.jpg";
 
 function SectionWrapper({ title, children }) {
@@ -55,18 +57,25 @@ function SectionWrapper({ title, children }) {
 export default function MainWebPage() {
   const logic = useMainPageLogic();
 
+  // Hàm xử lý khi bấm vào genre trong breadcrumb ở trang chi tiết sách
+  const handleBackToGenre = (genre) => {
+    // 1. Thoát trang chi tiết bằng cách clear detailedBookId
+    logic.setDetailedBookId(null);
+    // 2. Đảm bảo selectedGenre khớp với genre đã chọn
+    logic.setSelectedGenre(genre);
+    // 3. Cuộn lên đầu trang
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const isViewingDetail = !!logic.detailedBookId;
   const isViewingGenre = !isViewingDetail && logic.selectedGenre !== "";
   const isSearching = !isViewingDetail && !isViewingGenre && logic.searchQuery.trim() !== "";
 
   const sections = useMemo(() => {
     const recommended = logic.getRecommendedBooks();
-    const recIds = recommended.map(b => b._id);
-    const mayBooks = logic.getBooksOfMay(recIds);
-    const mayIds = [...recIds, ...mayBooks.map(b => b._id)];
-    const juneBooks = logic.getBooksOfJune(mayIds);
-    const juneIds = [...mayIds, ...juneBooks.map(b => b._id)];
-    const bizBooks = logic.getBusinessSelfHelpBooks(juneIds);
+    const mayBooks = logic.getBooksOfMay();
+    const juneBooks = logic.getBooksOfJune();
+    const bizBooks = logic.getBusinessSelfHelpBooks();
     return { recommended, mayBooks, juneBooks, bizBooks };
   }, [logic.books, logic.recommendedBooks, logic.brokenImages]);
 
@@ -94,9 +103,14 @@ export default function MainWebPage() {
           </div>
         ) : (
           <LayoutGroup>
-            {/* Đã xóa div bao bọc có class bg-[#fdf6e3]/70 gây lỗi vệt dư thừa */}
             {isViewingDetail ? (
-              <BookDetailPage book={logic.detailedBook} onBackToHome={logic.handleBackToHome} {...logic} />
+              <BookDetailPage 
+                book={logic.detailedBook} 
+                activeGenre={logic.selectedGenre} // Truyền thể loại đang chọn để ưu tiên hiển thị
+                onBackToHome={logic.handleBackToHome} 
+                onBackToGenre={handleBackToGenre} 
+                {...logic} 
+              />
             ) : isViewingGenre ? (
               <GenreBooksView {...logic} />
             ) : isSearching ? (
@@ -124,6 +138,10 @@ export default function MainWebPage() {
         )}
       </main>
 
+      <AnimatePresence>
+        {logic.isCartDrawerOpen && <CartDrawer {...logic} />}
+        {logic.isWishlistDrawerOpen && <WishlistDrawer {...logic} />}
+      </AnimatePresence>
       <BookPreviewModal {...logic} />
       <Footer />
     </div>
